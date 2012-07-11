@@ -278,26 +278,29 @@ class TestOnClassFunctions(unittest.TestCase):
 
 	def test_object(self):
 		class Aloha:
+			def __init__(self, v):
+				self.v = v
 			def m(self, x):
 				return x
 
-		a = Aloha()
-		b = Aloha()
+		a = Aloha('a')
+		b = Aloha('b')
 
 		@dbc.after(b, 'm')
 		def p(self, x):
-			raise ValueError("buffy")
+			raise ValueError("buffy %s" % self.v)
 
 		self.assertEquals(a.m(7), 7)
 
 		with self.assertRaises(ValueError) as e:
 			b.m(8)
-		self.assertEquals(e.exception.message, "buffy")
+		self.assertEquals(e.exception.message, "buffy b")
 
 		@dbc.before(b, 'm')
 		def p(self, x):
-			raise ValueError("angel")
+			raise ValueError("angel %s" % self.v)
 		self.assertEquals(a.m(7), 7)
+		b.v = 'b2'
 		with self.assertRaises(ValueError) as e:
 			b.m(8)
-		self.assertEquals(e.exception.message, "angel")
+		self.assertEquals(e.exception.message, "angel b2")
