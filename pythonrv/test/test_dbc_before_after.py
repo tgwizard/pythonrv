@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import testutils
-
 import unittest
 
 from pythonrv import dbc
@@ -23,6 +21,9 @@ def func_margaret():
 
 def func_spike(x):
 	return x
+
+def func_zorro(x):
+	return "zorro"
 
 def func_attributes():
 	return func_attributes.test_attrib
@@ -111,6 +112,35 @@ class TestOnFunctions(unittest.TestCase):
 			pass
 
 		self.assertEquals(func_attributes.test_attrib, 'test')
+
+	def test_explicit_call(self):
+		def p(x):
+			if x == 'p':
+				raise ValueError('p')
+		def m(x):
+			if x == 'm':
+				raise ValueError('m')
+		def n(x):
+			if x == 'n':
+				raise ValueError('n')
+
+		dbc.before(func_zorro)((p,m))
+		dbc.after(func_zorro)(n)
+
+		res = func_zorro(None)
+		self.assertEquals(res, "zorro")
+
+		with self.assertRaises(ValueError) as e:
+			func_zorro('p')
+		self.assertEquals(e.exception.message, 'p')
+
+		with self.assertRaises(ValueError) as e:
+			func_zorro('m')
+		self.assertEquals(e.exception.message, 'm')
+
+		with self.assertRaises(ValueError) as e:
+			func_zorro('n')
+		self.assertEquals(e.exception.message, 'n')
 
 	def test_calling_cond_alone(self):
 		class Aloha:

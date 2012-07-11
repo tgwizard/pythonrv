@@ -45,18 +45,19 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 	def validate_callable(p):
 		if hasattr(p, '__call__'):
 			return p
-		raise TypeError("Contract condition %s is not callable" % p)
 
 	def populate(key, value):
 		if not value:
 			return
-		try:
-			# first try to iterate through the value; works if it is an iterable
-			for p in value:
-				_dbc[key].append(validate_callable(p))
-		except TypeError:
-			# fallback on just adding the value; a single callable
-			_dbc[key].append(validate_callable(value))
+		if hasattr(value, '__call__'):
+			_dbc[key].append(value)
+		else:
+			try:
+				# try to iterate through the value; works if it is an iterable
+				for p in value:
+					populate(key, p)
+			except TypeError:
+				raise TypeError("Contract condition %s is not callable" % p, e)
 
 	populate('pre', pre)
 	populate('post', post)

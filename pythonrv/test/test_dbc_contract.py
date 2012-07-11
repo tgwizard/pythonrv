@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-import testutils
-
 import unittest
 
 from pythonrv import dbc
-
 
 class TestOnFunctions(unittest.TestCase):
 	def test_return_value(self):
@@ -60,7 +57,41 @@ class TestOnFunctions(unittest.TestCase):
 			def s(self):
 				self.val += 's'
 
-			@dbc.contract(pre=(a,b,a,b), post=(c,a,b))
+			@dbc.contract(pre=(a,(b,a),b), post=(c,a,((b))))
+			def n(self):
+				self.val += 'n'
+
+		obj = Aloha()
+		obj.val = 'q'
+		obj.m()
+		self.assertEquals(obj.val, 'qabmc')
+
+		obj.val = 'q'
+		obj.s()
+		self.assertEquals(obj.val, 'qs')
+
+		obj.val = 'q'
+		obj.n()
+		self.assertEquals(obj.val, 'qababncab')
+
+	def test_requires_ensure(self):
+		def a(self):
+			self.val += 'a'
+		def b(self):
+			self.val += 'b'
+		def c(self):
+			self.val += 'c'
+
+		class Aloha(object):
+			@dbc.contract(pre=(a), requires=b, post=c)
+			def m(self):
+				self.val += 'm'
+
+			@dbc.contract(requires=(), ensures=())
+			def s(self):
+				self.val += 's'
+
+			@dbc.contract(requires=(a,(b,a),b), ensures=(c,a,((b))))
 			def n(self):
 				self.val += 'n'
 
