@@ -6,7 +6,7 @@ import unittest
 from pythonrv import dbc
 
 
-class TestContractSemantics(unittest.TestCase):
+class TestOnFunctions(unittest.TestCase):
 	def test_return_value(self):
 		def pre(x):
 			return 17
@@ -128,7 +128,19 @@ class TestContractSemantics(unittest.TestCase):
 		m(2); m(3); m(10)
 		self.assertEquals(m.val, 16)
 
-class TestClassFunctionSemantics(unittest.TestCase):
+	def test_explicit_call(self):
+		def p(x):
+			p.val = 'x' if not hasattr(p, 'val') else p.val + 'y'
+		def m(x):
+			return x
+
+		n = dbc.contract(pre=p, post=p)(m)
+		res = n(7)
+		self.assertEquals(res, 7)
+		self.assertEquals(p.val, 'xy')
+
+
+class TestOnClassFunctions(unittest.TestCase):
 	def test_method_attachment(self):
 		def p(self):
 			self.val += 'p'

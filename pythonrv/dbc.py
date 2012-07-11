@@ -2,19 +2,16 @@
 import types
 import inspect
 
-def dbc_condition_placeholder(*args, **kwargs):
-	print "in dbc_condition_placeholder"
-
 def before(obj, func=None):
 	def decorator(precondition):
 		instrument(obj, func, pre=precondition)
-		return dbc_condition_placeholder
+		return precondition
 	return decorator
 
 def after(obj, func=None):
 	def decorator(postcondition):
 		instrument(obj, func, post=postcondition)
-		return dbc_condition_placeholder
+		return postcondition
 	return decorator
 
 def contract(pre=None, post=None):
@@ -113,7 +110,10 @@ def setup_wrapper(obj, func, inner_func, attach=True):
 			pass
 	elif args[0] == 'self':
 		# method
-		pass
+		if type(obj) == types.InstanceType:
+			# method of an existing instance
+			# why this works, I don't know
+			_dbc['target'] = func
 	else:
 		# class method
 		wrapper = classmethod(wrapper)
@@ -134,13 +134,19 @@ def make_wrapper():
 		else:
 			raise TypeError("wrapper is of a weird type...")
 
-		for p in _dbc['pre']:
+		def call_condition(p):
+			if hasattr(_dbc['target'], '__self__'):
+				p(_dbc['target'].__self__, *args, **kwargs)
 			p(*args, **kwargs)
+
+
+		for p in _dbc['pre']:
+			call_condition(p)
 
 		result = _dbc['target'](*args, **kwargs)
 
 		for p in _dbc['post']:
-			p(*args, **kwargs)
+			call_condition(p)
 
 		return result
 	return wrapper

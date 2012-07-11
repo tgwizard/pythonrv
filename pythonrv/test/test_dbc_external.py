@@ -21,6 +21,9 @@ def func_desmond(k, x=''):
 def func_margaret():
 	pass
 
+def func_spike(x):
+	return x
+
 def func_attributes():
 	return func_attributes.test_attrib
 func_attributes.test_attrib = "test"
@@ -33,7 +36,7 @@ class AlohaGlobal(object):
 		return self.x
 
 # and the tests
-class TestExternalInjectionAttachment(unittest.TestCase):
+class TestOnFunctions(unittest.TestCase):
 	def test_invalid_function_reference(self):
 		with self.assertRaises(ValueError):
 			@dbc.before('func_margaret')
@@ -59,55 +62,6 @@ class TestExternalInjectionAttachment(unittest.TestCase):
 			def a():
 				pass
 
-	def test_method(self):
-		class Aloha:
-			def m(self):
-				pass
-
-		@dbc.before(Aloha, 'm')
-		def a(self):
-			pass
-		@dbc.before(Aloha, Aloha.m)
-		def b(self):
-			pass
-
-	def test_method_only_func_not_working(self):
-		class Aloha:
-			def m(self):
-				pass
-
-		#with self.assertRaises(ValueError):
-		@dbc.before(Aloha.m)
-		def a(self):
-			pass
-
-	def test_classmethod(self):
-		class Aloha:
-			@classmethod
-			def m(cls):
-				pass
-
-		@dbc.before(Aloha, 'm')
-		def a(cls):
-			pass
-		@dbc.before(Aloha, Aloha.m)
-		def b(cls):
-			pass
-
-	def test_staticmethod(self):
-		class Aloha:
-			@staticmethod
-			def m():
-				pass
-
-		@dbc.before(Aloha, 'm')
-		def a():
-			pass
-		@dbc.before(Aloha, Aloha.m)
-		def b():
-			pass
-
-class TestExternalInjectionSemantics(unittest.TestCase):
 	def test_return_value(self):
 		@dbc.before(func_adam)
 		def pre():
@@ -157,6 +111,77 @@ class TestExternalInjectionSemantics(unittest.TestCase):
 			pass
 
 		self.assertEquals(func_attributes.test_attrib, 'test')
+
+	def test_calling_cond_alone(self):
+		class Aloha:
+			def m(self, x):
+				return x+1
+
+		def p(self, x):
+			if self == 8:
+				raise ValueError("buffy")
+			return 7
+
+		q = dbc.before(Aloha, 'm')(p)
+
+		with self.assertRaises(ValueError) as e:
+			q(8, 7)
+		self.assertEquals(e.exception.message, "buffy")
+		self.assertEquals(q(None, 3), 7)
+
+		@dbc.after(Aloha.m)
+		def z(self, x):
+			return 17
+
+		self.assertEquals(z(None, None), 17)
+
+class TestOnClassFunctions(unittest.TestCase):
+	def test_method(self):
+		class Aloha:
+			def m(self):
+				pass
+
+		@dbc.before(Aloha, 'm')
+		def a(self):
+			pass
+		@dbc.before(Aloha, Aloha.m)
+		def b(self):
+			pass
+
+	def test_method_only_func_not_working(self):
+		class Aloha:
+			def m(self):
+				pass
+
+		@dbc.before(Aloha.m)
+		def a(self):
+			pass
+
+	def test_classmethod(self):
+		class Aloha:
+			@classmethod
+			def m(cls):
+				pass
+
+		@dbc.before(Aloha, 'm')
+		def a(cls):
+			pass
+		@dbc.before(Aloha, Aloha.m)
+		def b(cls):
+			pass
+
+	def test_staticmethod(self):
+		class Aloha:
+			@staticmethod
+			def m():
+				pass
+
+		@dbc.before(Aloha, 'm')
+		def a():
+			pass
+		@dbc.before(Aloha, Aloha.m)
+		def b():
+			pass
 
 	def test_method_global_class(self):
 		@dbc.before(AlohaGlobal, AlohaGlobal.shoot)
@@ -250,3 +275,29 @@ class TestExternalInjectionSemantics(unittest.TestCase):
 		obj_res = obj.sm(2)
 		self.assertEquals(obj_res, 3)
 		self.assertEquals(Aloha.val, 'qab_ab')
+
+	def test_object(self):
+		class Aloha:
+			def m(self, x):
+				return x
+
+		a = Aloha()
+		b = Aloha()
+
+		@dbc.after(b, 'm')
+		def p(self, x):
+			raise ValueError("buffy")
+
+		self.assertEquals(a.m(7), 7)
+
+		with self.assertRaises(ValueError) as e:
+			b.m(8)
+		self.assertEquals(e.exception.message, "buffy")
+
+		@dbc.before(b, 'm')
+		def p(self, x):
+			raise ValueError("angel")
+		self.assertEquals(a.m(7), 7)
+		with self.assertRaises(ValueError) as e:
+			b.m(8)
+		self.assertEquals(e.exception.message, "angel")
