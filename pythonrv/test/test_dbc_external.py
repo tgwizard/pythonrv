@@ -1,6 +1,5 @@
-# awesome path hack
-import sys, os
-sys.path.insert(0, os.path.abspath('..'))
+# -*- coding: utf-8 -*-
+import testutils
 
 import unittest
 
@@ -77,10 +76,10 @@ class TestExternalInjectionAttachment(unittest.TestCase):
 			def m(self):
 				pass
 
-		with self.assertRaises(ValueError):
-			@dbc.before(Aloha.m)
-			def a(self):
-				pass
+		#with self.assertRaises(ValueError):
+		@dbc.before(Aloha.m)
+		def a(self):
+			pass
 
 	def test_classmethod(self):
 		class Aloha:
@@ -205,7 +204,7 @@ class TestExternalInjectionSemantics(unittest.TestCase):
 			def adsf(self):
 				pass
 
-		@dbc.before(Aloha, 'cm')
+		@dbc.before(Aloha, Aloha.cm)
 		def a(cls, x):
 			cls.val += 'a'
 

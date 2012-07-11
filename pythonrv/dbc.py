@@ -19,10 +19,12 @@ def after(obj, func=None):
 
 def contract(pre=None, post=None):
 	def decorator(func):
-		pass
+		return instrument(None, func, pre=pre, post=post, attach=False)
 	return decorator
 
-def instrument(obj, func, pre=None, post=None):
+_StaticMethodType = type(staticmethod(lambda: None))
+
+def instrument(obj, func, pre=None, post=None, attach=True):
 	"""
 	Instruments func with a wrapper function that will call all functions in pre
 	before and all functions in post after it calls func.
@@ -31,58 +33,79 @@ def instrument(obj, func, pre=None, post=None):
 	if not func:
 		func, obj = obj, func
 
+	# try to get the function from the container object
 	if isinstance(func, basestring):
 		if hasattr(obj, func):
 			func = getattr(obj, func)
 		else:
 			raise ValueError("Cannot access function %s on container obj %s" % (func, obj))
-	if not obj:
-		if inspect.isroutine(func):
-			obj = inspect.getmodule(func)
-		else:
-			raise ValueError("Cannot access container obj for function %s" % func)
 
-	if not hasattr(obj, func.__name__):
-		print dir(func)
+	if not inspect.isroutine(func):
+		raise ValueError("Function cannot be found or accessed %s" % func)
+
+	# classmethods and staticmethods are wrapped win an object
+	# the "inner function" can be accessed through the __func__ attribute
+	inner_func = func.__func__ if hasattr(func, '__func__') else func
+
+	if not obj:
+		if hasattr(func, 'im_class'):
+			pass
+			obj = func.im_class
+		else:
+			obj = inspect.getmodule(func)
+
+	if attach and not hasattr(obj, func.__name__):
 		raise ValueError("Container object %s doesn't have an attribute %s" % (obj, func))
 
-	_dbc = attach_wrapper(obj, func)
+	wrapper, _dbc = setup_wrapper(obj, func, inner_func, attach)
 
-	if pre:
-		_dbc['pre'].append(pre)
-	if post:
-		_dbc['post'].append(post)
+	# populate the wrapper with the given condiitions
+	def validate_callable(p):
+		if hasattr(p, '__call__'):
+			return p
+		raise TypeError("Contract condition %s is not callable" % p)
+	def populate(key, value):
+		if not value:
+			return
+		try:
+			for p in value:
+				_dbc[key].append(validate_callable(p))
+		except TypeError:
+			_dbc[key].append(validate_callable(value))
 
-def attach_wrapper(obj, func):
+	populate('pre', pre)
+	populate('post', post)
+
+	return wrapper
+
+def setup_wrapper(obj, func, inner_func, attach=True):
+
 	# bail early if we've already rewritten the target function
-	if hasattr(func, '_dbc'):
-		return func._dbc
-	if hasattr(func, '__func__') and hasattr(func.__func__, '_dbc'):
-		return func.__func__._dbc
+	if hasattr(inner_func, '_dbc'):
+		return inner_func, inner_func._dbc
 
 	wrapper = make_wrapper()
-	wrapper.func_name = func.func_name
-	wrapper.__module__ = func.__module__
+	wrapper.func_name = inner_func.func_name
+	wrapper.__module__ = inner_func.__module__
 
 	# copy function attributes from target to wrapper
-	for key, value in func.func_dict.items():
+	for key, value in inner_func.func_dict.items():
 		wrapper.func_dict[key] = value
 
 	# the dict to store wrapper data
 	_dbc = {
-			'target': func,
+			'target': inner_func,
 			'pre': [],
 			'post': [],
-			'is_classmethod': False,
 	}
 	wrapper._dbc = _dbc
 
 	is_class = isinstance(obj, type) or isinstance(obj, types.ClassType)
-	args, varargs, varkw, defaults = inspect.getargspec(func)
+	args, varargs, varkw, defaults = inspect.getargspec(inner_func)
 
 	if not args or args[0] not in ('self', 'cls', 'klass'):
 		# static function or method
-		if is_class:
+		if func.__class__ == _StaticMethodType or is_class:
 			# static method
 			wrapper = staticmethod(wrapper)
 		else:
@@ -93,13 +116,14 @@ def attach_wrapper(obj, func):
 		pass
 	else:
 		# class method
-		_dbc['is_classmethod'] = True
 		wrapper = classmethod(wrapper)
 
-	# attach the wrapper to the target functions container object
-	setattr(obj, func.__name__, wrapper)
+	if attach:
+		# attach the wrapper to the target functions container object
+		# use the "outer" function, which can be accessed through normal means
+		setattr(obj, inner_func.__name__, wrapper)
 
-	return _dbc
+	return wrapper, _dbc
 
 def make_wrapper():
 	def wrapper(*args, **kwargs):
@@ -112,11 +136,11 @@ def make_wrapper():
 
 		for p in _dbc['pre']:
 			p(*args, **kwargs)
-		if _dbc['is_classmethod']:
-			result = _dbc['target'](*args[1:], **kwargs)
-		else:
-			result = _dbc['target'](*args, **kwargs)
+
+		result = _dbc['target'](*args, **kwargs)
+
 		for p in _dbc['post']:
 			p(*args, **kwargs)
+
 		return result
 	return wrapper
