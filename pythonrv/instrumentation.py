@@ -28,10 +28,12 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 	inner_func = func.__func__ if hasattr(func, '__func__') else func
 
 	if not obj:
+		# we don't have an object; the function was given as a reference to it
 		if hasattr(func, 'im_class'):
-			pass
+			# function is part of a class
 			obj = func.im_class
 		else:
+			# function is globally accessible through its module
 			obj = inspect.getmodule(func)
 
 	if attach and not hasattr(obj, func.__name__):
@@ -44,13 +46,16 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 		if hasattr(p, '__call__'):
 			return p
 		raise TypeError("Contract condition %s is not callable" % p)
+
 	def populate(key, value):
 		if not value:
 			return
 		try:
+			# first try to iterate through the value; works if it is an iterable
 			for p in value:
 				_dbc[key].append(validate_callable(p))
 		except TypeError:
+			# fallback on just adding the value; a single callable
 			_dbc[key].append(validate_callable(value))
 
 	populate('pre', pre)
@@ -64,15 +69,16 @@ def setup_wrapper(obj, func, inner_func, attach=True):
 	if hasattr(inner_func, '_dbc'):
 		return inner_func, inner_func._dbc
 
+	# copy some important attributes
 	wrapper = make_wrapper()
 	wrapper.func_name = inner_func.func_name
 	wrapper.__module__ = inner_func.__module__
 
-	# copy function attributes from target to wrapper
+	# copy function attributes from target dict to wrapper dict
 	for key, value in inner_func.func_dict.items():
 		wrapper.func_dict[key] = value
 
-	# the dict to store wrapper data
+	# the dict to store data for the wrapper
 	_dbc = {
 			'target': inner_func,
 			'pre': [],
@@ -80,9 +86,11 @@ def setup_wrapper(obj, func, inner_func, attach=True):
 	}
 	wrapper._dbc = _dbc
 
-	is_class = isinstance(obj, type) or isinstance(obj, types.ClassType)
 	args, varargs, varkw, defaults = inspect.getargspec(inner_func)
 
+	is_class = isinstance(obj, type) or isinstance(obj, types.ClassType)
+
+	# FIXME: this is not a good way to check for static methods and functions
 	if not args or args[0] not in ('self', 'cls', 'klass'):
 		# static function or method
 		if func.__class__ == _StaticMethodType or is_class:
@@ -95,7 +103,7 @@ def setup_wrapper(obj, func, inner_func, attach=True):
 		# method
 		if type(obj) == types.InstanceType:
 			# method of an existing instance
-			# why this works, I don't know
+			# FIXME: I don't know why this works
 			_dbc['target'] = func
 	else:
 		# class method
@@ -111,23 +119,33 @@ def setup_wrapper(obj, func, inner_func, attach=True):
 def make_wrapper():
 	def wrapper(*args, **kwargs):
 		if hasattr(wrapper, '_dbc'):
+			# this is usually the case
 			_dbc = wrapper._dbc
 		elif hasattr(wrapper, '__func__') and hasattr(wrapper.__func__, '_dbc'):
+			# this happens if wrapper has been made into a classmethod or a
+			# staticmethod. wrapper has been wrapped by descriptor objects; we can
+			# access the real wrapper through the __func__ attribute
 			_dbc = wrapper.__func__._dbc
 		else:
 			raise TypeError("wrapper is of a weird type...")
 
 		def call_condition(p):
 			if hasattr(_dbc['target'], '__self__'):
+				# the target function was attached to an instance when we wrapped
+				# it, so the pre/post-functions will expect a self argument first.
+				# this is stored in the target's __self__ attribute
 				p(_dbc['target'].__self__, *args, **kwargs)
 			p(*args, **kwargs)
 
 
+		# pre-functions
 		for p in _dbc['pre']:
 			call_condition(p)
 
+		# target function
 		result = _dbc['target'](*args, **kwargs)
 
+		# post-functions
 		for p in _dbc['post']:
 			call_condition(p)
 
