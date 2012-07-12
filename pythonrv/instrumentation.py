@@ -9,9 +9,6 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 	Instruments func with a wrapper function that will call all functions in pre
 	before and all functions in post after it calls func.
 	"""
-	# swap places
-	if not func:
-		func, obj = obj, func
 
 	# try to get the function from the container object
 	if isinstance(func, basestring):
@@ -23,10 +20,6 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 	if not inspect.isroutine(func):
 		raise ValueError("Function cannot be found or accessed %s" % func)
 
-	# classmethods and staticmethods are wrapped win an object
-	# the "inner function" can be accessed through the __func__ attribute
-	inner_func = func.__func__ if hasattr(func, '__func__') else func
-
 	if not obj:
 		# we don't have an object; the function was given as a reference to it
 		if hasattr(func, 'im_class'):
@@ -36,16 +29,9 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 			# function is globally accessible through its module
 			obj = inspect.getmodule(func)
 
-	if attach and not hasattr(obj, func.__name__):
-		raise ValueError("Container object %s doesn't have an attribute %s" % (obj, func))
+	wrapper, _dbc = setup_wrapper(obj, func, attach)
 
-	wrapper, _dbc = setup_wrapper(obj, func, inner_func, attach)
-
-	# populate the wrapper with the given condiitions
-	def validate_callable(p):
-		if hasattr(p, '__call__'):
-			return p
-
+	# populate the wrapper with the given pre/post-functions
 	def populate(key, value):
 		if not value:
 			return
@@ -56,7 +42,7 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 				# try to iterate through the value; works if it is an iterable
 				for p in value:
 					populate(key, p)
-			except TypeError:
+			except TypeError as e:
 				raise TypeError("Contract condition %s is not callable" % p, e)
 
 	populate('pre', pre)
@@ -64,7 +50,11 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 
 	return wrapper
 
-def setup_wrapper(obj, func, inner_func, attach=True):
+def setup_wrapper(obj, func, attach=True):
+
+	# classmethods and staticmethods are wrapped win an object
+	# the "inner function" can be accessed through the __func__ attribute
+	inner_func = func.__func__ if hasattr(func, '__func__') else func
 
 	# bail early if we've already rewritten the target function
 	if hasattr(inner_func, '_dbc'):
@@ -72,7 +62,6 @@ def setup_wrapper(obj, func, inner_func, attach=True):
 
 	wrapper = make_wrapper()
 
-	# copy some important attributes
 	copy_function_details(wrapper, inner_func)
 
 	# the dict to store data for the wrapper
@@ -109,6 +98,9 @@ def setup_wrapper(obj, func, inner_func, attach=True):
 	if attach:
 		# attach the wrapper to the target functions container object
 		# use the "outer" function, which can be accessed through normal means
+		if not hasattr(obj, inner_func.__name__):
+			raise ValueError("Container object %s doesn't have an attribute %s" % (obj, func))
+
 		setattr(obj, inner_func.__name__, wrapper)
 
 	return wrapper, _dbc
@@ -134,7 +126,6 @@ def make_wrapper():
 				p(_dbc['target'].__self__, *args, **kwargs)
 			p(*args, **kwargs)
 
-
 		# pre-functions
 		for p in _dbc['pre']:
 			call_condition(p)
@@ -150,6 +141,7 @@ def make_wrapper():
 	return wrapper
 
 def copy_function_details(dest, src):
+	# copy some important attributes
 	dest.__name__ = src.__name__
 	dest.__module__ = src.__module__
 	dest.__doc__ = src.__doc__

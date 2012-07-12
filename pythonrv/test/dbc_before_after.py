@@ -316,6 +316,7 @@ class TestOnClassFunctions(unittest.TestCase):
 		a = Aloha('a')
 		b = Aloha('b')
 
+		# binding on existing object on fresh method
 		@dbc.after(b, 'm')
 		def p(self, x):
 			raise ValueError("buffy %s" % self.v)
@@ -326,7 +327,19 @@ class TestOnClassFunctions(unittest.TestCase):
 			b.m(8)
 		self.assertEquals(e.exception.message, "buffy b")
 
-		@dbc.before(b, 'm')
+		# binding directly through existing object on fresh method
+		@dbc.before(a.m)
+		def p(self, x):
+			if x == 'a':
+				raise ValueError("spike %s" % x)
+		self.assertEquals(a.m(7), 7)
+		with self.assertRaises(ValueError) as e:
+			a.m('a')
+		self.assertEquals(e.exception.message, "spike a")
+		self.assertEquals(a.m(7), 7)
+
+		# binding on existing object on already bound method
+		@dbc.before(b.m)
 		def p(self, x):
 			raise ValueError("angel %s" % self.v)
 		self.assertEquals(a.m(7), 7)

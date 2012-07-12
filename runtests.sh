@@ -1,2 +1,2 @@
 #!/bin/sh
-nosetests -d
+nosetests -d ./pythonrv/test/*.py
