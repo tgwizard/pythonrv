@@ -143,7 +143,7 @@ class TestOnFunctions(unittest.TestCase):
 		self.assertEquals(e.exception.message, 2)
 
 	def test_argument_mutability(self):
-		def p(x):
+		def p(x={}):
 			x['val'] -= 17
 
 		@dbc.contract(pre=p, post=p)

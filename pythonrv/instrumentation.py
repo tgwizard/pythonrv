@@ -70,14 +70,10 @@ def setup_wrapper(obj, func, inner_func, attach=True):
 	if hasattr(inner_func, '_dbc'):
 		return inner_func, inner_func._dbc
 
-	# copy some important attributes
 	wrapper = make_wrapper()
-	wrapper.func_name = inner_func.func_name
-	wrapper.__module__ = inner_func.__module__
 
-	# copy function attributes from target dict to wrapper dict
-	for key, value in inner_func.func_dict.items():
-		wrapper.func_dict[key] = value
+	# copy some important attributes
+	copy_function_details(wrapper, inner_func)
 
 	# the dict to store data for the wrapper
 	_dbc = {
@@ -152,3 +148,13 @@ def make_wrapper():
 
 		return result
 	return wrapper
+
+def copy_function_details(dest, src):
+	dest.__name__ = src.__name__
+	dest.__module__ = src.__module__
+	dest.__doc__ = src.__doc__
+	dest.__dict__.update(src.__dict__)
+	dest.__defaults__ = src.__defaults__
+	#dest.__kwdefaults__ = src.__kwdefaults__
+	assert not hasattr(src, '__kwdefaults__')
+
