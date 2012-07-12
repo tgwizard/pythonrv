@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-python-rv
+pythonrv
 
 A runtime verification framework for python.
 """
