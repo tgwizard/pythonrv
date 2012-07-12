@@ -18,7 +18,7 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 			raise ValueError("Cannot access function %s on container obj %s" % (func, obj))
 
 	if not inspect.isroutine(func):
-		raise ValueError("Function cannot be found or accessed %s" % func)
+		raise ValueError("Function %s cannot be found or accessed, or is not a function" % func)
 
 	if not obj:
 		# we don't have an object; the function was given as a reference to it
@@ -79,7 +79,7 @@ def setup_wrapper(obj, func, attach=True):
 	# FIXME: this is not a good way to check for static methods and functions
 	if not args or args[0] not in ('self', 'cls', 'klass'):
 		# static function or method
-		if func.__class__ == _StaticMethodType or is_class:
+		if type(func) == _StaticMethodType or is_class:
 			# static method
 			wrapper = staticmethod(wrapper)
 		else:
