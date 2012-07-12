@@ -317,7 +317,7 @@ class TestOnClassFunctions(unittest.TestCase):
 		b = Aloha('b')
 
 		# binding on existing object on fresh method
-		@dbc.after(b, 'm')
+		@dbc.after(b.m)
 		def p(self, x):
 			raise ValueError("buffy %s" % self.v)
 

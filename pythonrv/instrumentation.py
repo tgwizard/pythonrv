@@ -2,8 +2,6 @@
 import types
 import inspect
 
-_StaticMethodType = type(staticmethod(lambda: None))
-
 def instrument(obj, func, pre=None, post=None, attach=True):
 	"""
 	Instruments func with a wrapper function that will call all functions in pre
@@ -24,7 +22,11 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 		# we don't have an object; the function was given as a reference to it
 		if hasattr(func, 'im_class'):
 			# function is part of a class
-			obj = func.im_class
+			if func.__self__:
+				# it is bound to an instance
+				obj = func.__self__
+			else:
+				obj = func.im_class
 		else:
 			# function is globally accessible through its module
 			obj = inspect.getmodule(func)
@@ -74,22 +76,20 @@ def setup_wrapper(obj, func, attach=True):
 
 	args, varargs, varkw, defaults = inspect.getargspec(inner_func)
 
-	is_class = isinstance(obj, type) or isinstance(obj, types.ClassType)
-
 	# FIXME: this is not a good way to check for static methods and functions
-	if not args or args[0] not in ('self', 'cls', 'klass'):
-		# static function or method
-		if type(func) == _StaticMethodType or is_class:
-			# static method
-			wrapper = staticmethod(wrapper)
-		else:
-			# static function
-			pass
+	if type(obj) == types.ModuleType:
+		# static global function
+		pass
+	elif not args or args[0] not in ('self', 'cls', 'klass'):
+		# static method
+		wrapper = staticmethod(wrapper)
 	elif args[0] == 'self':
 		# method
-		if type(obj) == types.InstanceType:
+		if func.im_self:
 			# method of an existing instance
-			# FIXME: I don't know why this works
+			# func is a bound user-defined method object
+			# we need func, and not inner_func, since it will provide the self
+			# argument when we call it
 			_dbc['target'] = func
 	else:
 		# class method
@@ -124,7 +124,8 @@ def make_wrapper():
 				# it, so the pre/post-functions will expect a self argument first.
 				# this is stored in the target's __self__ attribute
 				p(_dbc['target'].__self__, *args, **kwargs)
-			p(*args, **kwargs)
+			else:
+				p(*args, **kwargs)
 
 		# pre-functions
 		for p in _dbc['pre']:
@@ -149,4 +150,3 @@ def copy_function_details(dest, src):
 	dest.__defaults__ = src.__defaults__
 	#dest.__kwdefaults__ = src.__kwdefaults__
 	assert not hasattr(src, '__kwdefaults__')
-
