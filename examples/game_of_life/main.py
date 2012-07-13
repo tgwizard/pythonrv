@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-# rvspecs needs to be imported first?
-import rvspecs
-
 import game
 import graphics_term as graphics
 

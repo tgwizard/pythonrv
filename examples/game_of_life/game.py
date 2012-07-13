@@ -98,11 +98,14 @@ class Game(object):
 					else:
 						self.board.make_dead(x,y)
 
+	def render(self, iteration):
+		self.graphics.render(self.board, iteration)
+
 	def main_loop(self, fps=1):
 		sleep_duration = 1.0 / fps
 		iteration = 0
 		while not self.exited:
-			self.graphics.render(self.board, iteration)
+			self.render(iteration)
 			self.update()
 			sleep(sleep_duration)
 			iteration += 1
