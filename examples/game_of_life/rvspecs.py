@@ -46,16 +46,24 @@ def ensure_game_of_life_rules(state, outgame, outboard):
 # G(update -> rendering before update2)
 # how to do this in LTL?
 class ShowUpdatesSpec(rv.Spec):
+
 	@rv.monitors(update=Game.update, render=Game.render)
 	@rv.spec
 	def spec_show_update(self, monitors):
 		if monitors.update.called:
-			# assert: either this is the first call, and val hasn't been set yet
-			# or the last call was to render
-			assert (not hasattr(self, 'val')) or self.val == 'r'
-			self.val = 'u'
-		if monitors.render.called:
-			self.val = 'r'
+			monitors.next(monitors.render)
 
 # this could be done with pre-condition contracts if we could store arbitrary
 # state
+@dbc.after(Game.update)
+@dbc.after(Game.render)
+@dbc.use_staet(store = True)
+def ensure_show_update(state):
+	if state.function == Game.update:
+		# assert: either this is the first call, and val hasn't been set yet
+		# or the last call was to render
+		assert state.store.get('val', 'r') == 'r'
+		state.store.val = 'u'
+	if state.function == Game.render:
+		state.store.val = 'r'
+
