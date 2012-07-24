@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+
+import dbcspecs
+
 import game
 import graphics_term as graphics
-
-import signal
-import sys
-
-gol = None
-
-def signal_handler(signal, frame):
-	gol.exit()
 
 def main():
 	if len(sys.argv) == 2:
@@ -23,7 +22,6 @@ def main():
 	return gol.main_loop(fps=10)
 
 def read_file(filename):
-	print filename
 	f = open(filename, 'r')
 	width = int(f.readline())
 	height = int(f.readline())

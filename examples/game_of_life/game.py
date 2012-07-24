@@ -84,19 +84,16 @@ class Game(object):
 		for x in range(old.width):
 			for y in range(old.height):
 				num = old.num_live_neighbours(x,y)
-				#print "%d for (%d,%d)" % (num, x, y)
 				if old.cell_is_live(x,y):
 					if num < 2:
 						self.board.make_dead(x,y)
-					if num >= 2 and num <= 3:
+					elif num >= 2 and num <= 3:
 						self.board.make_live(x,y)
 					else:
 						self.board.make_dead(x,y)
 				else:
 					if num == 3:
 						self.board.make_live(x,y)
-					else:
-						self.board.make_dead(x,y)
 
 	def render(self, iteration):
 		self.graphics.render(self.board, iteration)

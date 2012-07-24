@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import types
 import inspect
+import copy
+
+from dotdict import dotdict
 
 def instrument(obj, func, pre=None, post=None, attach=True):
 	"""
@@ -34,21 +37,27 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 	wrapper, _prv = setup_wrapper(obj, func, attach)
 
 	# populate the wrapper with the given pre/post-functions
-	def populate(key, value):
+	def populate(container, value):
 		if not value:
 			return
 		if hasattr(value, '__call__'):
-			_prv[key].append(value)
+			container.append(value)
+			if hasattr(value, '_prv_use_state'):
+				use_state = value._prv_use_state
+				for k, v in use_state.items():
+					if v:
+						_prv.use_state[k] = True
+				_prv.use_state['use'] = True
 		else:
 			try:
 				# try to iterate through the value; works if it is an iterable
 				for p in value:
-					populate(key, p)
+					populate(container, p)
 			except TypeError as e:
 				raise TypeError("Contract condition %s is not callable" % p, e)
 
-	populate('pre', pre)
-	populate('post', post)
+	populate(_prv.pre, pre)
+	populate(_prv.post, post)
 
 	return wrapper
 
@@ -67,11 +76,16 @@ def setup_wrapper(obj, func, attach=True):
 	copy_function_details(wrapper, inner_func)
 
 	# the dict to store data for the wrapper
-	_prv = {
-			'target': inner_func,
-			'pre': [],
-			'post': [],
-	}
+	_prv = dotdict()
+	_prv.target = inner_func
+	_prv.pre = []
+	_prv.post = []
+	_prv.use_state = dotdict()
+	_prv.use_state.use = False
+	_prv.use_state.inargs = False
+	_prv.use_state.global_store = False
+	_prv.state = dotdict()
+
 	wrapper._prv = _prv
 
 	args, varargs, varkw, defaults = inspect.getargspec(inner_func)
@@ -90,7 +104,7 @@ def setup_wrapper(obj, func, attach=True):
 			# func is a bound user-defined method object
 			# we need func, and not inner_func, since it will provide the self
 			# argument when we call it
-			_prv['target'] = func
+			_prv.target = func
 	else:
 		# class method
 		wrapper = classmethod(wrapper)
@@ -118,25 +132,80 @@ def make_wrapper():
 		else:
 			raise TypeError("wrapper is of a weird type...")
 
-		def call_condition(p):
-			if hasattr(_prv['target'], '__self__'):
+		# setup possible use of state
+		use_state = _prv.use_state
+		state = _prv.state
+
+		if use_state.use:
+			state.function_name = _prv.target.__name__
+			state.args = state.outargs = args
+			state.kwargs = state.outkwargs = args
+			state.return_value = None
+
+			# setup store in state
+			if use_state.global_store:
+				state.global_store = state.global_store or {}
+
+			# setup input args in state
+			if use_state.inargs:
+				state.inargs = copy.deepcopy(args)
+				kwdefaults = inspect.getargspec(_prv.target)[3]
+				state.inkwargs = {}
+				if kwdefaults:
+					state.inkwargs.update(kwdefaults)
+				state.inkwargs.update(copy.deepcopy(kwargs))
+
+		def call_condition_with_self(p):
+			if hasattr(_prv.target, '__self__'):
 				# the target function was attached to an instance when we wrapped
 				# it, so the pre/post-functions will expect a self argument first.
 				# this is stored in the target's __self__ attribute
-				p(_prv['target'].__self__, *args, **kwargs)
+				p(_prv.target.__self__, *args, **kwargs)
 			else:
 				p(*args, **kwargs)
 
+		def call_condition_with_state(p):
+			if hasattr(p, '_prv_use_state'):
+				# the condition has been marked that it wants to use "dbc state". send
+				# state as the only argument
+
+				# setup the conditions local store, if required
+				p_use_state = p._prv_use_state
+				if 'local_store' in p_use_state and p_use_state['local_store']:
+					if not hasattr(p, '_prv_local_store'):
+						p._prv_local_store = {}
+					state.local_store = p._prv_local_store
+
+				p(state)
+
+				# cleanup
+				# TODO: fix
+				if 'local_store' in p_use_state and p_use_state['local_store']:
+					del state.local_store
+			else:
+				call_condition_with_self(p)
+
 		# pre-functions
-		for p in _prv['pre']:
-			call_condition(p)
+		for p in _prv.pre:
+			call_condition_with_state(p)
 
 		# target function
-		result = _prv['target'](*args, **kwargs)
+		result = _prv.target(*args, **kwargs)
+
+		# copy result into state
+		if use_state.use:
+			state.result = result
 
 		# post-functions
-		for p in _prv['post']:
-			call_condition(p)
+		for p in _prv.post:
+			call_condition_with_state(p)
+
+		# cleanup state
+		if use_state.use:
+			state.args = state.kwargs = None
+			state.inargs = state.inkwargs = None
+			state.outargs = state.outkwargs = None
+			del state.result
 
 		return result
 	return wrapper
