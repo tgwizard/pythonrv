@@ -31,14 +31,14 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 			# function is globally accessible through its module
 			obj = inspect.getmodule(func)
 
-	wrapper, _dbc = setup_wrapper(obj, func, attach)
+	wrapper, _prv = setup_wrapper(obj, func, attach)
 
 	# populate the wrapper with the given pre/post-functions
 	def populate(key, value):
 		if not value:
 			return
 		if hasattr(value, '__call__'):
-			_dbc[key].append(value)
+			_prv[key].append(value)
 		else:
 			try:
 				# try to iterate through the value; works if it is an iterable
@@ -59,20 +59,20 @@ def setup_wrapper(obj, func, attach=True):
 	inner_func = func.__func__ if hasattr(func, '__func__') else func
 
 	# bail early if we've already rewritten the target function
-	if hasattr(inner_func, '_dbc'):
-		return inner_func, inner_func._dbc
+	if hasattr(inner_func, '_prv'):
+		return inner_func, inner_func._prv
 
 	wrapper = make_wrapper()
 
 	copy_function_details(wrapper, inner_func)
 
 	# the dict to store data for the wrapper
-	_dbc = {
+	_prv = {
 			'target': inner_func,
 			'pre': [],
 			'post': [],
 	}
-	wrapper._dbc = _dbc
+	wrapper._prv = _prv
 
 	args, varargs, varkw, defaults = inspect.getargspec(inner_func)
 
@@ -90,7 +90,7 @@ def setup_wrapper(obj, func, attach=True):
 			# func is a bound user-defined method object
 			# we need func, and not inner_func, since it will provide the self
 			# argument when we call it
-			_dbc['target'] = func
+			_prv['target'] = func
 	else:
 		# class method
 		wrapper = classmethod(wrapper)
@@ -103,39 +103,39 @@ def setup_wrapper(obj, func, attach=True):
 
 		setattr(obj, inner_func.__name__, wrapper)
 
-	return wrapper, _dbc
+	return wrapper, _prv
 
 def make_wrapper():
 	def wrapper(*args, **kwargs):
-		if hasattr(wrapper, '_dbc'):
+		if hasattr(wrapper, '_prv'):
 			# this is usually the case
-			_dbc = wrapper._dbc
-		elif hasattr(wrapper, '__func__') and hasattr(wrapper.__func__, '_dbc'):
+			_prv = wrapper._prv
+		elif hasattr(wrapper, '__func__') and hasattr(wrapper.__func__, '_prv'):
 			# this happens if wrapper has been made into a classmethod or a
 			# staticmethod. wrapper has been wrapped by descriptor objects; we can
 			# access the real wrapper through the __func__ attribute
-			_dbc = wrapper.__func__._dbc
+			_prv = wrapper.__func__._prv
 		else:
 			raise TypeError("wrapper is of a weird type...")
 
 		def call_condition(p):
-			if hasattr(_dbc['target'], '__self__'):
+			if hasattr(_prv['target'], '__self__'):
 				# the target function was attached to an instance when we wrapped
 				# it, so the pre/post-functions will expect a self argument first.
 				# this is stored in the target's __self__ attribute
-				p(_dbc['target'].__self__, *args, **kwargs)
+				p(_prv['target'].__self__, *args, **kwargs)
 			else:
 				p(*args, **kwargs)
 
 		# pre-functions
-		for p in _dbc['pre']:
+		for p in _prv['pre']:
 			call_condition(p)
 
 		# target function
-		result = _dbc['target'](*args, **kwargs)
+		result = _prv['target'](*args, **kwargs)
 
 		# post-functions
-		for p in _dbc['post']:
+		for p in _prv['post']:
 			call_condition(p)
 
 		return result
