@@ -3,7 +3,6 @@
 # inspired by stuff on the web
 class dotdict(object):
 	def __init__(self, **kwargs):
-		print kwargs
 		self.__dict__.update(kwargs)
 
 	def __getattr__(self, attr):

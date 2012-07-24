@@ -139,8 +139,7 @@ def make_wrapper():
 		if use_state.use:
 			state.function_name = _prv.target.__name__
 			state.args = state.outargs = args
-			state.kwargs = state.outkwargs = args
-			state.return_value = None
+			state.kwargs = state.outkwargs = kwargs
 
 			# setup store in state
 			if use_state.global_store:
@@ -151,8 +150,6 @@ def make_wrapper():
 				state.inargs = copy.deepcopy(args)
 				kwdefaults = inspect.getargspec(_prv.target)[3]
 				state.inkwargs = {}
-				if kwdefaults:
-					state.inkwargs.update(kwdefaults)
 				state.inkwargs.update(copy.deepcopy(kwargs))
 
 		def call_condition_with_self(p):
@@ -202,8 +199,10 @@ def make_wrapper():
 
 		# cleanup state
 		if use_state.use:
+			if 'inargs' in state:
+				del state.inargs
+				del state.inkwargs
 			state.args = state.kwargs = None
-			state.inargs = state.inkwargs = None
 			state.outargs = state.outkwargs = None
 			del state.result
 
