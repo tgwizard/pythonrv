@@ -21,5 +21,5 @@ class dotdict(object):
 	def __contains__(self, attr):
 		return attr in self.__dict__
 
-	def __str__(self):
-		return self.__dict__.__str__()
+	def __repr__(self):
+		return repr(self.__dict__)

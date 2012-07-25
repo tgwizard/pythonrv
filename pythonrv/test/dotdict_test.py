@@ -38,3 +38,7 @@ class TestDotdict(unittest.TestCase):
 		d = dotdict(val=7, foo='x')
 		e = dict(val=7, foo='x')
 		assert str(d) == str(e)
+
+		d2 = dict(x=d)
+		e2 = dict(x=e)
+		assert str(d2) == str(e2)
