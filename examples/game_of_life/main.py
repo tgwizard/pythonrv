@@ -5,7 +5,8 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-import dbcspecs
+#import dbcspecs
+import rvspecs
 
 import game
 import graphics_term as graphics

@@ -5,11 +5,12 @@ import copy
 
 from dotdict import dotdict
 
-def instrument(obj, func, pre=None, post=None, attach=True):
+def instrument(obj, func, pre=None, post=None, attach=True, extra=None):
 	"""
 	Instruments func with a wrapper function that will call all functions in pre
 	before and all functions in post after it calls func.
 	"""
+	extra = extra or {}
 
 	# try to get the function from the container object
 	if isinstance(func, basestring):
@@ -35,6 +36,12 @@ def instrument(obj, func, pre=None, post=None, attach=True):
 			obj = inspect.getmodule(func)
 
 	wrapper, _prv = setup_wrapper(obj, func, attach)
+
+	# update _prv with extra data
+	for key, item in extra.items():
+		if key in _prv:
+			raise ValueError("extra data cannot overide existing attribute (%s) in _prv" % key)
+		_prv[key] = item
 
 	# populate the wrapper with the given pre/post-functions
 	def populate(container, value):
@@ -116,6 +123,7 @@ def setup_wrapper(obj, func, attach=True):
 			raise ValueError("Container object %s doesn't have an attribute %s" % (obj, func))
 
 		setattr(obj, inner_func.__name__, wrapper)
+		wrapper = getattr(obj, inner_func.__name__)
 
 	return wrapper, _prv
 
@@ -151,6 +159,10 @@ def make_wrapper():
 				kwdefaults = inspect.getargspec(_prv.target)[3]
 				state.inkwargs = {}
 				state.inkwargs.update(copy.deepcopy(kwargs))
+
+			if use_state.rv:
+				state.rv = _prv.rv
+				state.wrapper = wrapper
 
 		def call_condition_with_self(p):
 			if hasattr(_prv.target, '__self__'):
@@ -218,3 +230,10 @@ def copy_function_details(dest, src):
 	dest.__defaults__ = src.__defaults__
 	#dest.__kwdefaults__ = src.__kwdefaults__
 	assert not hasattr(src, '__kwdefaults__')
+
+def use_state(**state_options):
+	state_options = state_options or {}
+	def decorator(func):
+		setattr(func, '_prv_use_state', state_options)
+		return func
+	return decorator

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import inspect
 
-from instrumentation import instrument
+from instrumentation import instrument, use_state
 
 def before(obj=None, func=None):
 	"""
@@ -70,9 +70,3 @@ def contract(pre=None, post=None, requires=None, ensures=None):
 		return instrument(None, func, pre=(pre, requires), post=(post, ensures), attach=False)
 	return decorator
 
-def use_state(**state_options):
-	state_options = state_options or {}
-	def decorator(func):
-		setattr(func, '_prv_use_state', state_options)
-		return func
-	return decorator
