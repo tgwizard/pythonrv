@@ -95,8 +95,16 @@ def monitors(**kwargs):
 		spec_rv.monitors = Monitors()
 
 		for name, func in kwargs.items():
+			obj = None
+			if not hasattr(func, '__call__'):
+				# try to expand the func into both object and function
+				try:
+					obj, func = func
+				except:
+					raise ValueError("Function %s to monitor is not callable, or iterable of (obj, func)" % str(func))
+
 			if not is_rv_instrumented(func):
-				func = instrument(None, func, pre=pre_func_call, post=post_func_call,
+				func = instrument(obj, func, pre=pre_func_call, post=post_func_call,
 						extra={'use_rv': True, 'rv': dotdict(specs=[])})
 
 			func_rv = func._prv.rv
