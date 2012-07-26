@@ -6,31 +6,13 @@ class Monitor(object):
 	def __init__(self, name, function):
 		self.name = name
 		self.function = function
-		print "creating monitor: ", self
-		super(Monitor, self).__init__()
+		self.oneshots = []
 
 	def with_state(self, state):
 		return StatefulMonitor(state, self)
 
 	def __repr__(self):
 		return "Monitor('%s', %s)" % (self.name, self.function)
-
-class StatefulMonitor(object):
-	def __init__(self, state, monitor):
-		self.state = state
-		self.monitor = monitor
-		self.name = monitor.name
-
-		if hasattr(self.monitor.function, '__func__'):
-			self.called = self.state.wrapper == self.monitor.function.__func__
-		else:
-			self.called = self.state.wrapper == self.monitor.function
-
-	def next(self, *args):
-		pass
-
-	def __repr__(self):
-		return "StatefulMonitor(%s, %s)" % (self.state, self.monitor)
 
 class Monitors(object):
 	def __init__(self):
@@ -46,24 +28,61 @@ class Monitors(object):
 	def __repr__(self):
 		return "Monitors(%s)" % self.monitors
 
+class StatefulMonitor(object):
+	def __init__(self, state, monitor):
+		self.state = state
+		self.monitor = monitor
+		self.name = monitor.name
+
+		if hasattr(self.monitor.function, '__func__'):
+			self.called = self.state.wrapper == self.monitor.function.__func__
+		else:
+			self.called = self.state.wrapper == self.monitor.function
+
+	def inputs(self):
+		# TODO: make it possible for this to work when not called. how?
+		self._assert_called()
+		return self.state.inargs
+
+	def outputs(self):
+		self._assert_called()
+		return self.state.outargs
+
+	def result(self):
+		self._assert_called()
+		return self.state.result
+
+	def next(self, func, args, **kwargs):
+		def on_next_call(monitors):
+			func(monitors, *args, **kwargs)
+		self.monitor.oneshots.append(on_next_call)
+
+	def _assert_called(self):
+		if not self.called:
+			raise ValueError("Cannot get inputs for a function that isn't called")
+
+	def __repr__(self):
+		return "StatefulMonitor(%s, %s)" % (self.state, self.monitor)
+
 class StatefulMonitors(object):
 	def __init__(self, state, monitors):
 		self.state = state
 		self.monitors = monitors
 
-	def __getattr__(self, name):
-		return self[name]
+		for name, monitor in monitors.monitors.items():
+			sm = StatefulMonitor(state, monitor)
+			self.__dict__[name] = sm
+			if sm.called:
+				self.active_monitor = sm
 
 	def __getitem__(self, name):
-		monitor = self.monitors.monitors[name]
-		monitor = StatefulMonitor(self.state, monitor)
-		self.__dict__[name] = monitor
-		return monitor
+		return self.__dict__[name]
 
 	def next(self, monitor, error_msg=None):
-		error_msg = error_msg or "Next function called should have been %s" % monitor.name
+		name_to_check = monitor.name
+		error_msg = error_msg or "Next function called should have been %s" % name_to_check
 		def next_should_be_monitor(monitors):
-			assert monitors[monitor.name].called, error_msg
+			assert monitors[name_to_check].called, error_msg
 		self.monitors.oneshots.append(next_should_be_monitor)
 
 	def __repr__(self):
@@ -76,12 +95,7 @@ def monitors(**kwargs):
 		spec_rv.monitors = Monitors()
 
 		for name, func in kwargs.items():
-			print "monitor %s" % name
-			print func
-			if is_rv_instrumented(func):
-				print "func is already instrumented for rv"
-			else:
-				print "will instrument func for rv"
+			if not is_rv_instrumented(func):
 				func = instrument(None, func, pre=pre_func_call, post=post_func_call,
 						extra={'use_rv': True, 'rv': dotdict(specs=[])})
 
@@ -104,7 +118,7 @@ def add_oneshot(target, func):
 def pre_func_call(state):
 	pass
 
-@use_state(rv=True)
+@use_state(rv=True, inargs=True)
 def post_func_call(state):
 	for spec in state.rv.specs:
 		m = spec._prv.monitors
@@ -115,8 +129,11 @@ def post_func_call(state):
 	pass
 
 def call_oneshots(stateful_monitors, spec):
-	if not stateful_monitors.monitors.oneshots:
-		return
-	for oneshot in stateful_monitors.monitors.oneshots:
-		oneshot(stateful_monitors)
-	stateful_monitors.monitors.oneshots = []
+	if stateful_monitors.monitors.oneshots:
+		for oneshot in stateful_monitors.monitors.oneshots:
+			oneshot(stateful_monitors)
+		stateful_monitors.monitors.oneshots = []
+	if stateful_monitors.active_monitor.monitor.oneshots:
+		for oneshot in stateful_monitors.active_monitor.monitor.oneshots:
+			oneshot(stateful_monitors)
+		stateful_monitors.active_monitor.monitor.oneshots = []
