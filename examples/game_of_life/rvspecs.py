@@ -10,7 +10,6 @@ def spec_update(monitors):
 	for x in range(board.width):
 		for y in range(board.height):
 			n = board.num_live_neighbours(x,y)
-			# next is unfortunately a keyword...
 			if n > 3:
 				monitors.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
 			elif n == 3:
@@ -28,6 +27,7 @@ def ensure_cell_state(monitors, x, y, t):
 # you may not update the game without rendering in between:
 # G(update -> rendering before update2)
 # how to do this in LTL?
+# update -> X !update
 @rv.monitors(update=Game.update, render=Game.render)
 def spec_show_update(monitors):
 	if monitors.update.called:

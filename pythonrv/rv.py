@@ -44,17 +44,29 @@ class StatefulMonitor(object):
 		self._assert_called()
 		return self.state.inargs
 
+	def input_kwargs(self):
+		self._assert_called()
+		return self.state.inkwargs
+
 	def outputs(self):
 		self._assert_called()
 		return self.state.outargs
+
+	def output_kwargs(self):
+		self._assert_called()
+		return self.state.outkwargs
 
 	def result(self):
 		self._assert_called()
 		return self.state.result
 
-	def next(self, func, args, **kwargs):
+	def next(self, func, func_args=None, func_kwargs=None):
+		func_args = func_args or tuple()
+		func_kwargs = func_kwargs or dict()
+
 		def on_next_call(monitors):
-			func(monitors, *args, **kwargs)
+			func(monitors, *func_args, **func_kwargs)
+
 		self.monitor.oneshots.append(on_next_call)
 
 	def _assert_called(self):
