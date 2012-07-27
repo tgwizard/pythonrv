@@ -4,7 +4,7 @@ from game import Game, CellTypes
 
 # this is an attempt at an runtime verification specification
 # it will ensure that the rules of game of life is followed
-@rv.monitors(update=Game.update)
+@rv.monitor(update=Game.update)
 def spec_update(monitors):
 	board = monitors.update.inputs()[0].board
 	for x in range(board.width):
@@ -28,13 +28,13 @@ def ensure_cell_state(monitors, x, y, t):
 # G(update -> rendering before update2)
 # how to do this in LTL?
 # update -> X !update
-@rv.monitors(update=Game.update, render=Game.render)
+@rv.monitor(update=Game.update, render=Game.render)
 def spec_show_update(monitors):
 	if monitors.update.called:
 		monitors.next(monitors.render, "Game update called without rendering in between")
 
 
-@rv.monitors(update=Game.update, render=Game.render)
+@rv.monitor(update=Game.update, render=Game.render)
 def spec_test(monitors):
 	assert monitors.update.called or monitors.render.called, "None of monitors were called"
 	#raise ValueError("fdsa")

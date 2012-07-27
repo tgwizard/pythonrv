@@ -13,7 +13,7 @@ class TestInputOutput(unittest.TestCase):
 				kwargs['z']['z'] = 0
 				return 'ret'
 
-		@rv.monitors(m=M.m)
+		@rv.monitor(m=M.m)
 		def spec(monitors):
 			inputs = monitors.m.inputs()
 			input_kwargs = monitors.m.input_kwargs()

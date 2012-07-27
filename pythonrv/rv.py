@@ -101,7 +101,7 @@ class StatefulMonitors(object):
 		return "StatefulMonitors(%s, %s)" % (self.state, self.monitors)
 
 
-def monitors(**kwargs):
+def monitor(**kwargs):
 	def decorator(spec):
 		spec_rv = dotdict()
 		spec_rv.monitors = Monitors()

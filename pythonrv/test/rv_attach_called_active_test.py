@@ -3,7 +3,7 @@ import unittest
 
 from pythonrv import rv
 
-# these tests test that (1) @rv.monitors works as expected - that it can attach
+# these tests test that (1) @rv.monitor works as expected - that it can attach
 # to the desired functions and (2) that .called and .active_monitor work
 
 def t_one():
@@ -15,7 +15,7 @@ class TestCalledAndActive(unittest.TestCase):
 	def test_one_function(self):
 		self.assertEquals(t_one(), 1)
 
-		@rv.monitors(test=t_one)
+		@rv.monitor(test=t_one)
 		def spec(monitors):
 			self.assertTrue(monitors.test.called)
 			self.assertEquals(monitors.active_monitor, monitors.test)
@@ -30,7 +30,7 @@ class TestCalledAndActive(unittest.TestCase):
 
 		enable_first = True
 
-		@rv.monitors(test=t_two)
+		@rv.monitor(test=t_two)
 		def spec(monitors):
 			self.assertTrue(monitors.test.called)
 			self.assertEquals(monitors.active_monitor, monitors.test)
@@ -44,7 +44,7 @@ class TestCalledAndActive(unittest.TestCase):
 		enable_first = False
 		self.assertEquals(t_two(), 2)
 
-		@rv.monitors(test=t_two)
+		@rv.monitor(test=t_two)
 		def spec2(monitors):
 			self.assertTrue(monitors.test.called)
 			self.assertEquals(monitors.active_monitor, monitors.test)
@@ -64,7 +64,7 @@ class TestCalledAndActive(unittest.TestCase):
 			def a(self):
 				return 1
 
-		@rv.monitors(a=M.a)
+		@rv.monitor(a=M.a)
 		def spec(monitors):
 			self.assertTrue(monitors.a.called)
 			self.assertEquals(monitors.active_monitor, monitors.a)
@@ -84,7 +84,7 @@ class TestCalledAndActive(unittest.TestCase):
 			def c(self):
 				return -1
 
-		@rv.monitors(a=M.a, b=M.b)
+		@rv.monitor(a=M.a, b=M.b)
 		def spec(monitors):
 			self.assertTrue(monitors.a.called or monitors.b.called)
 			if monitors.a.called:
@@ -115,7 +115,7 @@ class TestCalledAndActive(unittest.TestCase):
 				return -1
 
 		enable_first = True
-		@rv.monitors(a=M.a, b=M.b)
+		@rv.monitor(a=M.a, b=M.b)
 		def spec(monitors):
 			self.assertTrue(monitors.a.called or monitors.b.called)
 			if monitors.a.called:
@@ -143,7 +143,7 @@ class TestCalledAndActive(unittest.TestCase):
 		self.assertEquals(m.b(), 0)
 		self.assertEquals(m.c(), -1)
 
-		@rv.monitors(a=M.a, b=M.b)
+		@rv.monitor(a=M.a, b=M.b)
 		def spec2(monitors):
 			self.assertTrue(monitors.a.called or monitors.b.called)
 			if monitors.a.called:
@@ -184,7 +184,7 @@ class TestClassmethodStaticmethod(unittest.TestCase):
 		self.assertEquals(M.a(), 'a')
 
 		enable_first = True
-		@rv.monitors(a=M.a)
+		@rv.monitor(a=M.a)
 		def spec(monitors):
 			if enable_first:
 				raise ValueError("in spec")
@@ -194,7 +194,7 @@ class TestClassmethodStaticmethod(unittest.TestCase):
 		self.assertEquals(e.exception.message, "in spec")
 
 		enable_first = False
-		@rv.monitors(a=M.a)
+		@rv.monitor(a=M.a)
 		def spec2(monitors):
 			raise ValueError("in spec2")
 
@@ -218,7 +218,7 @@ class TestClassmethodStaticmethod(unittest.TestCase):
 		self.assertEquals(M.a(), 'a')
 
 		enable_first = True
-		@rv.monitors(a=(M, M.a))
+		@rv.monitor(a=(M, M.a))
 		def spec(monitors):
 			if enable_first:
 				raise ValueError("in spec")
@@ -228,7 +228,7 @@ class TestClassmethodStaticmethod(unittest.TestCase):
 		self.assertEquals(e.exception.message, "in spec")
 
 		enable_first = False
-		@rv.monitors(a=(M, M.a))
+		@rv.monitor(a=(M, M.a))
 		def spec2(monitors):
 			raise ValueError("in spec2")
 
@@ -254,7 +254,7 @@ class TestOnObject(unittest.TestCase):
 		self.assertEquals(b.m(), 'm')
 
 		# attach spec on a
-		@rv.monitors(m=a.m)
+		@rv.monitor(m=a.m)
 		def spec(monitors):
 			raise ValueError("m called on a")
 
@@ -266,7 +266,7 @@ class TestOnObject(unittest.TestCase):
 
 		# attach spec on c with tuple format
 		c = M()
-		@rv.monitors(m=(c, c.m))
+		@rv.monitor(m=(c, c.m))
 		def spec2(monitors):
 			raise ValueError("m called on c")
 
@@ -278,7 +278,7 @@ class TestOnObject(unittest.TestCase):
 
 		# attach spec on d wiht tuple-string format
 		d = M()
-		@rv.monitors(m=(d, "m"))
+		@rv.monitor(m=(d, "m"))
 		def spec3(monitors):
 			raise ValueError("m called on d")
 

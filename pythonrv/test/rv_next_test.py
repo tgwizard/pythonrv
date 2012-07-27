@@ -9,7 +9,7 @@ class TestMonitorsNext(unittest.TestCase):
 			def m(self):
 				pass
 
-		@rv.monitors(m=M.m)
+		@rv.monitor(m=M.m)
 		def spec(monitors):
 			monitors.next(monitors.m)
 
@@ -25,7 +25,7 @@ class TestMonitorsNext(unittest.TestCase):
 			def n(self):
 				pass
 
-		@rv.monitors(m=M.m, n=M.n)
+		@rv.monitor(m=M.m, n=M.n)
 		def spec(monitors):
 			monitors.next(monitors.m)
 
@@ -46,7 +46,7 @@ class TestMonitorNext(unittest.TestCase):
 		def raise_error(monitors):
 			raise ValueError("buffy")
 
-		@rv.monitors(m=M.m)
+		@rv.monitor(m=M.m)
 		def spec(monitors):
 			monitors.m.next(raise_error)
 
@@ -66,7 +66,7 @@ class TestMonitorNext(unittest.TestCase):
 		def raise_error(monitors):
 			raise ValueError("buffy")
 
-		@rv.monitors(m=M.m)
+		@rv.monitor(m=M.m)
 		def spec(monitors):
 			monitors.m.next(raise_error)
 
@@ -87,7 +87,7 @@ class TestMonitorNext(unittest.TestCase):
 		def raise_error(monitors, x, y, **kwargs):
 			raise ValueError(x + y + kwargs.get('z', -1))
 
-		@rv.monitors(m=M.m)
+		@rv.monitor(m=M.m)
 		def spec(monitors):
 			monitors.m.next(raise_error, (1, 2), dict(z=15))
 
