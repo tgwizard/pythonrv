@@ -38,10 +38,37 @@ def spec_show_update(event):
 	if event.fn.update.called:
 		event.next(event.fn.render, "Game update called without rendering in between")
 
+# dummy stuff to make non-working example syntax compile
+def dummy_decorator(*args, **kwargs):
+	def decorator(func):
+		return func
+	return decorator
+rv.until = dummy_decorator
+
+# update may not be called before render has been called once
+# is this a good way to do this?
+@rv.until(update=Game.update, render=Game.render)
+def spec_render_before_update():
+	return (lambda e: not e.fn.update.called, lambda e: e.fn.render.called)
+
+rv.until(update=Game.update, render=Game.render)((lambda e: not e.fn.update.called, lambda e: e.fn.render.called))
+
+#@rv.monitor(update=Game.update, render=Game.render)
+def spec_render_before_update2(event):
+	assert event.fn.render.called
+	event.until(lambda e: e.fn.update.called)
+
+
+# TODO: the until-specs above "terminate", or are "finished"/"fulfilled". How
+# to determine if other specs can do so as well?
+
+# TODO: The LTL operator F, eventually/finally (sometime in the future)
+
 
 @rv.monitor(update=Game.update, render=Game.render)
 def spec_test(event):
 	assert event.fn.update.called or event.fn.render.called, "None of event were called"
 	#raise ValueError("fdsa")
+
 
 #raise ValueError("asdf")
