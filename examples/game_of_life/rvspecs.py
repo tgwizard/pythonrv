@@ -13,19 +13,19 @@ def all_board_cells(board):
 # it will ensure that the rules of game of life is followed
 @rv.monitor(update=Game.update)
 def spec_update(event):
-	board = event.update.inputs()[0].board
+	board = event.fn.update.inputs()[0].board
 	for x, y, n in all_board_cells(board):
 		if n > 3:
-			event.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
+			event.fn.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
 		elif n == 3:
-			event.update.next(ensure_cell_state, (x,y,CellTypes.LIVE))
+			event.fn.update.next(ensure_cell_state, (x,y,CellTypes.LIVE))
 		elif n == 2 and board.cell_is_live(x, y):
-			event.update.next(ensure_cell_state, (x,y,CellTypes.LIVE))
+			event.fn.update.next(ensure_cell_state, (x,y,CellTypes.LIVE))
 		else:
-			event.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
+			event.fn.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
 
 def ensure_cell_state(event, x, y, t):
-	board = event.update.inputs()[0].board
+	board = event.fn.update.inputs()[0].board
 	assert board.cell_is_of_type(x, y, t), \
 			"Cell (%d,%d) is not of type %s as it should be" % (x, y, t)
 
@@ -35,13 +35,13 @@ def ensure_cell_state(event, x, y, t):
 # update -> X !update
 @rv.monitor(update=Game.update, render=Game.render)
 def spec_show_update(event):
-	if event.update.called:
-		event.next(event.render, "Game update called without rendering in between")
+	if event.fn.update.called:
+		event.next(event.fn.render, "Game update called without rendering in between")
 
 
 @rv.monitor(update=Game.update, render=Game.render)
 def spec_test(event):
-	assert event.update.called or event.render.called, "None of event were called"
+	assert event.fn.update.called or event.fn.render.called, "None of event were called"
 	#raise ValueError("fdsa")
 
 #raise ValueError("asdf")

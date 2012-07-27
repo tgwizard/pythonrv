@@ -2,6 +2,7 @@
 from instrumentation import instrument, use_state
 from dotdict import dotdict
 
+
 class Monitor(object):
 	def __init__(self, name, function):
 		self.name = name
@@ -10,6 +11,7 @@ class Monitor(object):
 
 	def __repr__(self):
 		return "Monitor('%s', %s)" % (self.name, self.function)
+
 
 class Monitors(object):
 	def __init__(self):
@@ -21,6 +23,7 @@ class Monitors(object):
 
 	def __repr__(self):
 		return "Monitors(%s)" % self.monitors
+
 
 class EventMonitor(object):
 	def __init__(self, state, monitor):
@@ -70,26 +73,34 @@ class EventMonitor(object):
 	def __repr__(self):
 		return "StatefulMonitor(%s, %s)" % (self.state, self.monitor)
 
-class Event(object):
-	def __init__(self, state, monitors):
-		self.state = state
-		self.monitors = monitors
 
+class EventFunctions(object):
+	def __init__(self, state, monitors):
 		for name, monitor in monitors.monitors.items():
 			sm = EventMonitor(state, monitor)
 			self.__dict__[name] = sm
 			if sm.called:
-				self.active_monitor = sm
+				self._active_monitor = sm
 
 	def __getitem__(self, name):
 		return self.__dict__[name]
+
+
+class Event(object):
+	def __init__(self, state, monitors):
+		self.state = state
+		self._monitors = monitors
+
+		fn = EventFunctions(state, monitors)
+		self.fn = fn
+		self.active_function = fn._active_monitor
 
 	def next(self, monitor, error_msg=None):
 		name_to_check = monitor.name
 		error_msg = error_msg or "Next function called should have been %s" % name_to_check
 		def next_should_be_monitor(event):
-			assert event[name_to_check].called, error_msg
-		self.monitors.oneshots.append(next_should_be_monitor)
+			assert event.fn[name_to_check].called, error_msg
+		self._monitors.oneshots.append(next_should_be_monitor)
 
 	def __repr__(self):
 		return "Event(%s, %s)" % (self.state, self.monitors)
@@ -143,11 +154,14 @@ def post_func_call(state):
 	pass
 
 def call_oneshots(event, spec):
-	if event.monitors.oneshots:
-		for oneshot in event.monitors.oneshots:
+	monitors = event._monitors
+	if monitors.oneshots:
+		for oneshot in monitors.oneshots:
 			oneshot(event)
-		event.monitors.oneshots = []
-	if event.active_monitor.monitor.oneshots:
-		for oneshot in event.active_monitor.monitor.oneshots:
+		monitors.oneshots = []
+
+	monitor = event.active_function.monitor
+	if monitor.oneshots:
+		for oneshot in monitor.oneshots:
 			oneshot(event)
-		event.active_monitor.monitor.oneshots = []
+		monitor.oneshots = []

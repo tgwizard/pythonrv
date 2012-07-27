@@ -11,7 +11,7 @@ class TestMonitorsNext(unittest.TestCase):
 
 		@rv.monitor(m=M.m)
 		def spec(event):
-			event.next(event.m)
+			event.next(event.fn.m)
 
 		a = M()
 		a.m()
@@ -27,7 +27,7 @@ class TestMonitorsNext(unittest.TestCase):
 
 		@rv.monitor(m=M.m, n=M.n)
 		def spec(event):
-			event.next(event.m)
+			event.next(event.fn.m)
 
 		a = M()
 		a.n()
@@ -48,7 +48,7 @@ class TestMonitorNext(unittest.TestCase):
 
 		@rv.monitor(m=M.m)
 		def spec(event):
-			event.m.next(raise_error)
+			event.fn.m.next(raise_error)
 
 		a = M()
 		a.m()
@@ -68,7 +68,7 @@ class TestMonitorNext(unittest.TestCase):
 
 		@rv.monitor(m=M.m)
 		def spec(event):
-			event.m.next(raise_error)
+			event.fn.m.next(raise_error)
 
 		a = M()
 		a.m()
@@ -89,7 +89,7 @@ class TestMonitorNext(unittest.TestCase):
 
 		@rv.monitor(m=M.m)
 		def spec(event):
-			event.m.next(raise_error, (1, 2), dict(z=15))
+			event.fn.m.next(raise_error, (1, 2), dict(z=15))
 
 		a = M()
 		a.m()
