@@ -39,3 +39,16 @@ class TestInputOutput(unittest.TestCase):
 		self.assertEquals(e.exception.message,
 				"in(initial {'x': 7} y {'z': 8}) result(ret) out(m {'x2': 9, 'x': 7} y {'z': 0})")
 
+	def test_spec_executed_after(self):
+		class M(object):
+			def m(self):
+				raise ValueError("m")
+
+		@rv.monitor(m=M.m)
+		def spec(event):
+			raise ValueError("spec")
+
+		a = M()
+		with self.assertRaises(ValueError) as e:
+			a.m()
+		self.assertEquals(e.exception.message, "m")
