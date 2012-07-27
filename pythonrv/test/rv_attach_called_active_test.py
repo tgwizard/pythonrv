@@ -16,9 +16,9 @@ class TestCalledAndActive(unittest.TestCase):
 		self.assertEquals(t_one(), 1)
 
 		@rv.monitor(test=t_one)
-		def spec(monitors):
-			self.assertTrue(monitors.test.called)
-			self.assertEquals(monitors.active_monitor, monitors.test)
+		def spec(event):
+			self.assertTrue(event.test.called)
+			self.assertEquals(event.active_monitor, event.test)
 			raise ValueError("test called")
 
 		with self.assertRaises(ValueError) as e:
@@ -31,9 +31,9 @@ class TestCalledAndActive(unittest.TestCase):
 		enable_first = True
 
 		@rv.monitor(test=t_two)
-		def spec(monitors):
-			self.assertTrue(monitors.test.called)
-			self.assertEquals(monitors.active_monitor, monitors.test)
+		def spec(event):
+			self.assertTrue(event.test.called)
+			self.assertEquals(event.active_monitor, event.test)
 			if enable_first:
 				raise ValueError("test called")
 
@@ -45,9 +45,9 @@ class TestCalledAndActive(unittest.TestCase):
 		self.assertEquals(t_two(), 2)
 
 		@rv.monitor(test=t_two)
-		def spec2(monitors):
-			self.assertTrue(monitors.test.called)
-			self.assertEquals(monitors.active_monitor, monitors.test)
+		def spec2(event):
+			self.assertTrue(event.test.called)
+			self.assertEquals(event.active_monitor, event.test)
 			raise ValueError("test called2")
 
 		with self.assertRaises(ValueError) as e:
@@ -65,9 +65,9 @@ class TestCalledAndActive(unittest.TestCase):
 				return 1
 
 		@rv.monitor(a=M.a)
-		def spec(monitors):
-			self.assertTrue(monitors.a.called)
-			self.assertEquals(monitors.active_monitor, monitors.a)
+		def spec(event):
+			self.assertTrue(event.a.called)
+			self.assertEquals(event.active_monitor, event.a)
 			raise ValueError("a called")
 
 		m = M()
@@ -85,13 +85,13 @@ class TestCalledAndActive(unittest.TestCase):
 				return -1
 
 		@rv.monitor(a=M.a, b=M.b)
-		def spec(monitors):
-			self.assertTrue(monitors.a.called or monitors.b.called)
-			if monitors.a.called:
-				self.assertEquals(monitors.active_monitor, monitors.a)
+		def spec(event):
+			self.assertTrue(event.a.called or event.b.called)
+			if event.a.called:
+				self.assertEquals(event.active_monitor, event.a)
 				raise ValueError("a called")
-			if monitors.b.called:
-				self.assertEquals(monitors.active_monitor, monitors.b)
+			if event.b.called:
+				self.assertEquals(event.active_monitor, event.b)
 				raise ValueError("b called")
 
 		m = M()
@@ -116,14 +116,14 @@ class TestCalledAndActive(unittest.TestCase):
 
 		enable_first = True
 		@rv.monitor(a=M.a, b=M.b)
-		def spec(monitors):
-			self.assertTrue(monitors.a.called or monitors.b.called)
-			if monitors.a.called:
-				self.assertEquals(monitors.active_monitor, monitors.a)
+		def spec(event):
+			self.assertTrue(event.a.called or event.b.called)
+			if event.a.called:
+				self.assertEquals(event.active_monitor, event.a)
 				if enable_first:
 					raise ValueError("a called")
-			if monitors.b.called:
-				self.assertEquals(monitors.active_monitor, monitors.b)
+			if event.b.called:
+				self.assertEquals(event.active_monitor, event.b)
 				if enable_first:
 					raise ValueError("b called")
 
@@ -144,13 +144,13 @@ class TestCalledAndActive(unittest.TestCase):
 		self.assertEquals(m.c(), -1)
 
 		@rv.monitor(a=M.a, b=M.b)
-		def spec2(monitors):
-			self.assertTrue(monitors.a.called or monitors.b.called)
-			if monitors.a.called:
-				self.assertEquals(monitors.active_monitor, monitors.a)
+		def spec2(event):
+			self.assertTrue(event.a.called or event.b.called)
+			if event.a.called:
+				self.assertEquals(event.active_monitor, event.a)
 				raise ValueError("a called2")
-			if monitors.b.called:
-				self.assertEquals(monitors.active_monitor, monitors.b)
+			if event.b.called:
+				self.assertEquals(event.active_monitor, event.b)
 				raise ValueError("b called2")
 
 		with self.assertRaises(ValueError) as e:
@@ -185,7 +185,7 @@ class TestClassmethodStaticmethod(unittest.TestCase):
 
 		enable_first = True
 		@rv.monitor(a=M.a)
-		def spec(monitors):
+		def spec(event):
 			if enable_first:
 				raise ValueError("in spec")
 
@@ -195,7 +195,7 @@ class TestClassmethodStaticmethod(unittest.TestCase):
 
 		enable_first = False
 		@rv.monitor(a=M.a)
-		def spec2(monitors):
+		def spec2(event):
 			raise ValueError("in spec2")
 
 		with self.assertRaises(ValueError) as e:
@@ -219,7 +219,7 @@ class TestClassmethodStaticmethod(unittest.TestCase):
 
 		enable_first = True
 		@rv.monitor(a=(M, M.a))
-		def spec(monitors):
+		def spec(event):
 			if enable_first:
 				raise ValueError("in spec")
 
@@ -229,7 +229,7 @@ class TestClassmethodStaticmethod(unittest.TestCase):
 
 		enable_first = False
 		@rv.monitor(a=(M, M.a))
-		def spec2(monitors):
+		def spec2(event):
 			raise ValueError("in spec2")
 
 		with self.assertRaises(ValueError) as e:
@@ -255,7 +255,7 @@ class TestOnObject(unittest.TestCase):
 
 		# attach spec on a
 		@rv.monitor(m=a.m)
-		def spec(monitors):
+		def spec(event):
 			raise ValueError("m called on a")
 
 		with self.assertRaises(ValueError) as e:
@@ -267,7 +267,7 @@ class TestOnObject(unittest.TestCase):
 		# attach spec on c with tuple format
 		c = M()
 		@rv.monitor(m=(c, c.m))
-		def spec2(monitors):
+		def spec2(event):
 			raise ValueError("m called on c")
 
 		with self.assertRaises(ValueError) as e:
@@ -279,7 +279,7 @@ class TestOnObject(unittest.TestCase):
 		# attach spec on d wiht tuple-string format
 		d = M()
 		@rv.monitor(m=(d, "m"))
-		def spec3(monitors):
+		def spec3(event):
 			raise ValueError("m called on d")
 
 		with self.assertRaises(ValueError) as e:

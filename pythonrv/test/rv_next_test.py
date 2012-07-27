@@ -4,21 +4,21 @@ import unittest
 from pythonrv import rv
 
 class TestMonitorsNext(unittest.TestCase):
-	def test_monitors_next_simple(self):
+	def test_event_next_simple(self):
 		class M(object):
 			def m(self):
 				pass
 
 		@rv.monitor(m=M.m)
-		def spec(monitors):
-			monitors.next(monitors.m)
+		def spec(event):
+			event.next(event.m)
 
 		a = M()
 		a.m()
 		a.m()
 		a.m()
 
-	def test_monitors_next_more(self):
+	def test_event_next_more(self):
 		class M(object):
 			def m(self):
 				pass
@@ -26,8 +26,8 @@ class TestMonitorsNext(unittest.TestCase):
 				pass
 
 		@rv.monitor(m=M.m, n=M.n)
-		def spec(monitors):
-			monitors.next(monitors.m)
+		def spec(event):
+			event.next(event.m)
 
 		a = M()
 		a.n()
@@ -43,12 +43,12 @@ class TestMonitorNext(unittest.TestCase):
 			def m(self):
 				pass
 
-		def raise_error(monitors):
+		def raise_error(event):
 			raise ValueError("buffy")
 
 		@rv.monitor(m=M.m)
-		def spec(monitors):
-			monitors.m.next(raise_error)
+		def spec(event):
+			event.m.next(raise_error)
 
 		a = M()
 		a.m()
@@ -63,12 +63,12 @@ class TestMonitorNext(unittest.TestCase):
 			def n(self):
 				pass
 
-		def raise_error(monitors):
+		def raise_error(event):
 			raise ValueError("buffy")
 
 		@rv.monitor(m=M.m)
-		def spec(monitors):
-			monitors.m.next(raise_error)
+		def spec(event):
+			event.m.next(raise_error)
 
 		a = M()
 		a.m()
@@ -84,12 +84,12 @@ class TestMonitorNext(unittest.TestCase):
 			def m(self):
 				pass
 
-		def raise_error(monitors, x, y, **kwargs):
+		def raise_error(event, x, y, **kwargs):
 			raise ValueError(x + y + kwargs.get('z', -1))
 
 		@rv.monitor(m=M.m)
-		def spec(monitors):
-			monitors.m.next(raise_error, (1, 2), dict(z=15))
+		def spec(event):
+			event.m.next(raise_error, (1, 2), dict(z=15))
 
 		a = M()
 		a.m()

@@ -8,9 +8,6 @@ class Monitor(object):
 		self.function = function
 		self.oneshots = []
 
-	def with_state(self, state):
-		return StatefulMonitor(state, self)
-
 	def __repr__(self):
 		return "Monitor('%s', %s)" % (self.name, self.function)
 
@@ -19,16 +16,13 @@ class Monitors(object):
 		self.monitors = {}
 		self.oneshots = []
 
-	def with_state(self, state):
-		return StatefulMonitors(state, self)
-
 	def add_monitor(self, monitor):
 		self.monitors[monitor.name] = monitor
 
 	def __repr__(self):
 		return "Monitors(%s)" % self.monitors
 
-class StatefulMonitor(object):
+class EventMonitor(object):
 	def __init__(self, state, monitor):
 		self.state = state
 		self.monitor = monitor
@@ -76,13 +70,13 @@ class StatefulMonitor(object):
 	def __repr__(self):
 		return "StatefulMonitor(%s, %s)" % (self.state, self.monitor)
 
-class StatefulMonitors(object):
+class Event(object):
 	def __init__(self, state, monitors):
 		self.state = state
 		self.monitors = monitors
 
 		for name, monitor in monitors.monitors.items():
-			sm = StatefulMonitor(state, monitor)
+			sm = EventMonitor(state, monitor)
 			self.__dict__[name] = sm
 			if sm.called:
 				self.active_monitor = sm
@@ -93,12 +87,12 @@ class StatefulMonitors(object):
 	def next(self, monitor, error_msg=None):
 		name_to_check = monitor.name
 		error_msg = error_msg or "Next function called should have been %s" % name_to_check
-		def next_should_be_monitor(monitors):
-			assert monitors[name_to_check].called, error_msg
+		def next_should_be_monitor(event):
+			assert event[name_to_check].called, error_msg
 		self.monitors.oneshots.append(next_should_be_monitor)
 
 	def __repr__(self):
-		return "StatefulMonitors(%s, %s)" % (self.state, self.monitors)
+		return "Event(%s, %s)" % (self.state, self.monitors)
 
 
 def monitor(**kwargs):
@@ -141,19 +135,19 @@ def pre_func_call(state):
 @use_state(rv=True, inargs=True)
 def post_func_call(state):
 	for spec in state.rv.specs:
-		m = spec._prv.monitors
-		sm = m.with_state(state)
-		call_oneshots(sm, spec)
+		monitors = spec._prv.monitors
+		event = Event(state, monitors)
+		call_oneshots(event, spec)
 
-		spec(sm)
+		spec(event)
 	pass
 
-def call_oneshots(stateful_monitors, spec):
-	if stateful_monitors.monitors.oneshots:
-		for oneshot in stateful_monitors.monitors.oneshots:
-			oneshot(stateful_monitors)
-		stateful_monitors.monitors.oneshots = []
-	if stateful_monitors.active_monitor.monitor.oneshots:
-		for oneshot in stateful_monitors.active_monitor.monitor.oneshots:
-			oneshot(stateful_monitors)
-		stateful_monitors.active_monitor.monitor.oneshots = []
+def call_oneshots(event, spec):
+	if event.monitors.oneshots:
+		for oneshot in event.monitors.oneshots:
+			oneshot(event)
+		event.monitors.oneshots = []
+	if event.active_monitor.monitor.oneshots:
+		for oneshot in event.active_monitor.monitor.oneshots:
+			oneshot(event)
+		event.active_monitor.monitor.oneshots = []

@@ -14,17 +14,17 @@ class TestInputOutput(unittest.TestCase):
 				return 'ret'
 
 		@rv.monitor(m=M.m)
-		def spec(monitors):
-			inputs = monitors.m.inputs()
-			input_kwargs = monitors.m.input_kwargs()
+		def spec(event):
+			inputs = event.m.inputs()
+			input_kwargs = event.m.input_kwargs()
 			old_self, x = inputs
 			y = input_kwargs['y']
 			z = input_kwargs['z']
 
-			result = monitors.m.result()
+			result = event.m.result()
 
-			outputs = monitors.m.outputs()
-			output_kwargs = monitors.m.output_kwargs()
+			outputs = event.m.outputs()
+			output_kwargs = event.m.output_kwargs()
 			out_self, out_x = outputs
 			out_y = output_kwargs['y']
 			out_z = output_kwargs['z']
