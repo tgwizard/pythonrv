@@ -2,22 +2,27 @@ from pythonrv import rv, dbc
 
 from game import Game, CellTypes
 
+# a generator to iterate through all board cells
+def all_board_cells(board):
+	for x in range(board.width):
+		for y in range(board.height):
+			n = board.num_live_neighbours(x,y)
+			yield (x, y, n)
+
 # this is an attempt at an runtime verification specification
 # it will ensure that the rules of game of life is followed
 @rv.monitor(update=Game.update)
 def spec_update(event):
 	board = event.update.inputs()[0].board
-	for x in range(board.width):
-		for y in range(board.height):
-			n = board.num_live_neighbours(x,y)
-			if n > 3:
-				event.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
-			elif n == 3:
-				event.update.next(ensure_cell_state, (x,y,CellTypes.LIVE))
-			elif n == 2 and board.cell_is_live(x, y):
-				event.update.next(ensure_cell_state, (x,y,CellTypes.LIVE))
-			else:
-				event.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
+	for x, y, n in all_board_cells(board):
+		if n > 3:
+			event.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
+		elif n == 3:
+			event.update.next(ensure_cell_state, (x,y,CellTypes.LIVE))
+		elif n == 2 and board.cell_is_live(x, y):
+			event.update.next(ensure_cell_state, (x,y,CellTypes.LIVE))
+		else:
+			event.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
 
 def ensure_cell_state(event, x, y, t):
 	board = event.update.inputs()[0].board
