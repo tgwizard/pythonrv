@@ -15,16 +15,16 @@ class TestInputOutput(unittest.TestCase):
 
 		@rv.monitor(m=M.m)
 		def spec(event):
-			inputs = event.fn.m.inputs()
-			input_kwargs = event.fn.m.input_kwargs()
+			inputs = event.fn.m.inputs
+			input_kwargs = event.fn.m.input_kwargs
 			old_self, x = inputs
 			y = input_kwargs['y']
 			z = input_kwargs['z']
 
-			result = event.fn.m.result()
+			result = event.fn.m.result
 
-			outputs = event.fn.m.outputs()
-			output_kwargs = event.fn.m.output_kwargs()
+			outputs = event.fn.m.outputs
+			output_kwargs = event.fn.m.output_kwargs
 			out_self, out_x = outputs
 			out_y = output_kwargs['y']
 			out_z = output_kwargs['z']

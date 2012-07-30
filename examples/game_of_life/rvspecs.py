@@ -13,7 +13,7 @@ def all_board_cells(board):
 # it will ensure that the rules of game of life is followed
 @rv.monitor(update=Game.update)
 def spec_update(event):
-	board = event.fn.update.inputs()[0].board
+	board = event.fn.update.inputs[0].board
 	for x, y, n in all_board_cells(board):
 		if n > 3:
 			event.fn.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
@@ -25,7 +25,7 @@ def spec_update(event):
 			event.fn.update.next(ensure_cell_state, (x,y,CellTypes.DEAD))
 
 def ensure_cell_state(event, x, y, t):
-	board = event.fn.update.inputs()[0].board
+	board = event.fn.update.inputs[0].board
 	assert board.cell_is_of_type(x, y, t), \
 			"Cell (%d,%d) is not of type %s as it should be" % (x, y, t)
 
@@ -38,25 +38,25 @@ def spec_show_update(event):
 	if event.fn.update.called:
 		event.next(event.fn.render, "Game update called without rendering in between")
 
-# dummy stuff to make non-working example syntax compile
-def dummy_decorator(*args, **kwargs):
-	def decorator(func):
-		return func
-	return decorator
-rv.until = dummy_decorator
 
 # update may not be called before render has been called once
-# is this a good way to do this?
-@rv.until(update=Game.update, render=Game.render)
-def spec_render_before_update():
-	return (lambda e: not e.fn.update.called, lambda e: e.fn.render.called)
+@rv.monitor(update=Game.update, render=Game.render)
+def spec_render_before_update(event):
+	if event.fn.update.called:
+		assert len(event.history) > 1, "Game update called without calling render first"
+		event.success()
+	# we can also do it like this
+	if len(event.history) == 1:
+		# the first event/function call
+		# the following two assertions are equal
+		assert event.history[0].fn.render.called, "Game update called without calling render first"
+		assert event.fn.render.called, "Game update called without calling render first"
 
-rv.until(update=Game.update, render=Game.render)((lambda e: not e.fn.update.called, lambda e: e.fn.render.called))
-
-#@rv.monitor(update=Game.update, render=Game.render)
-def spec_render_before_update2(event):
-	assert event.fn.render.called
-	event.until(lambda e: e.fn.update.called)
+@rv.monitor(update=Game.update, render=Game.render)
+def spec_render_before_update_always(event):
+	if event.fn.update.called:
+		assert len(event.history) > 1, "Game update called without calling something else first"
+		assert event.prev.fn.render.called, "Render must be called before update"
 
 
 # TODO: the until-specs above "terminate", or are "finished"/"fulfilled". How

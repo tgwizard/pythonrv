@@ -8,6 +8,7 @@ class Monitor(object):
 		self.name = name
 		self.function = function
 		self.oneshots = []
+		self.history = []
 
 	def __repr__(self):
 		return "Monitor('%s', %s)" % (self.name, self.function)
@@ -17,6 +18,7 @@ class SpecInfo(object):
 	def __init__(self):
 		self.monitors = {}
 		self.oneshots = []
+		self.history = []
 
 	def add_monitor(self, monitor):
 		self.monitors[monitor.name] = monitor
@@ -36,26 +38,26 @@ class EventMonitor(object):
 		else:
 			self.called = self.state.wrapper == self.monitor.function
 
-	def inputs(self):
-		# TODO: make it possible for this to work when not called. how?
-		self._assert_called()
-		return self.state.inargs
+		# history
+		if self.called:
+			self.monitor.history.append(self)
+		self.history = self.monitor.history
+		if len(self.history) > 1:
+			self.prev = self.history[-2]
+		else:
+			self.prev = None
 
-	def input_kwargs(self):
-		self._assert_called()
-		return self.state.inkwargs
+		# inputs/outputs
+		if self.called:
+			self.inputs = self.state.inargs
+			self.input_kwargs = self.state.inkwargs
+			self.outputs = self.state.outargs
+			self.output_kwargs = self.state.outkwargs
+			self.result = self.state.result
+			# TODO: make it possible for this to work when not called. how?
 
-	def outputs(self):
-		self._assert_called()
-		return self.state.outargs
-
-	def output_kwargs(self):
-		self._assert_called()
-		return self.state.outkwargs
-
-	def result(self):
-		self._assert_called()
-		return self.state.result
+	def history():
+		return self.monitor.history
 
 	def next(self, func, func_args=None, func_kwargs=None):
 		func_args = func_args or tuple()
@@ -95,12 +97,26 @@ class Event(object):
 		self.fn = fn
 		self.active_function = fn._active_monitor
 
+		# history
+		spec_info.history.append(self)
+		self.history = spec_info.history
+		if len(self.history) > 1:
+			self.prev = self.history[-2]
+		else:
+			self.prev = None
+
 	def next(self, monitor, error_msg=None):
 		name_to_check = monitor.name
 		error_msg = error_msg or "Next function called should have been %s" % name_to_check
 		def next_should_be_monitor(event):
 			assert event.fn[name_to_check].called, error_msg
 		self._spec_info.oneshots.append(next_should_be_monitor)
+
+	def success(self, msg=None):
+		pass
+
+	def failure(self, msg=None):
+		pass
 
 	def __repr__(self):
 		return "Event(%s, %s)" % (self.state, self.monitors)
@@ -148,6 +164,7 @@ def post_func_call(state):
 	for spec in state.rv.specs:
 		spec_info = spec._prv.spec_info
 		event = Event(state, spec_info)
+
 		call_oneshots(event)
 
 		spec(event)
