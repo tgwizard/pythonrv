@@ -56,9 +56,6 @@ class EventMonitor(object):
 			self.result = self.state.result
 			# TODO: make it possible for this to work when not called. how?
 
-	def history():
-		return self.monitor.history
-
 	def next(self, func, func_args=None, func_kwargs=None):
 		func_args = func_args or tuple()
 		func_kwargs = func_kwargs or dict()
@@ -119,7 +116,7 @@ class Event(object):
 		pass
 
 	def __repr__(self):
-		return "Event(%s, %s)" % (self.state, self.monitors)
+		return "Event(%s, %s)" % (self.state, self._spec_info)
 
 
 def monitor(**kwargs):
