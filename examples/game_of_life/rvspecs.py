@@ -51,6 +51,7 @@ def spec_render_before_update(event):
 		# the following two assertions are equal
 		assert event.history[0].fn.render.called, "Game update called without calling render first"
 		assert event.fn.render.called, "Game update called without calling render first"
+		event.success()
 
 @rv.monitor(update=Game.update, render=Game.render)
 def spec_render_before_update_always(event):
