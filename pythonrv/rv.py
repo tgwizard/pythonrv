@@ -13,7 +13,7 @@ class Monitor(object):
 		return "Monitor('%s', %s)" % (self.name, self.function)
 
 
-class Monitors(object):
+class SpecInfo(object):
 	def __init__(self):
 		self.monitors = {}
 		self.oneshots = []
@@ -22,7 +22,7 @@ class Monitors(object):
 		self.monitors[monitor.name] = monitor
 
 	def __repr__(self):
-		return "Monitors(%s)" % self.monitors
+		return "SpecInfo(%s)" % self.monitors
 
 
 class EventMonitor(object):
@@ -75,23 +75,23 @@ class EventMonitor(object):
 
 
 class EventFunctions(object):
-	def __init__(self, state, monitors):
-		for name, monitor in monitors.monitors.items():
-			sm = EventMonitor(state, monitor)
-			self.__dict__[name] = sm
-			if sm.called:
-				self._active_monitor = sm
+	def __init__(self, state, spec_info):
+		for name, monitor in spec_info.monitors.items():
+			em = EventMonitor(state, monitor)
+			self.__dict__[name] = em
+			if em.called:
+				self._active_monitor = em
 
 	def __getitem__(self, name):
 		return self.__dict__[name]
 
 
 class Event(object):
-	def __init__(self, state, monitors):
+	def __init__(self, state, spec_info):
 		self.state = state
-		self._monitors = monitors
+		self._spec_info = spec_info
 
-		fn = EventFunctions(state, monitors)
+		fn = EventFunctions(state, spec_info)
 		self.fn = fn
 		self.active_function = fn._active_monitor
 
@@ -100,7 +100,7 @@ class Event(object):
 		error_msg = error_msg or "Next function called should have been %s" % name_to_check
 		def next_should_be_monitor(event):
 			assert event.fn[name_to_check].called, error_msg
-		self._monitors.oneshots.append(next_should_be_monitor)
+		self._spec_info.oneshots.append(next_should_be_monitor)
 
 	def __repr__(self):
 		return "Event(%s, %s)" % (self.state, self.monitors)
@@ -109,7 +109,7 @@ class Event(object):
 def monitor(**kwargs):
 	def decorator(spec):
 		spec_rv = dotdict()
-		spec_rv.monitors = Monitors()
+		spec_rv.spec_info = SpecInfo()
 
 		for name, func in kwargs.items():
 			obj = None
@@ -127,7 +127,7 @@ def monitor(**kwargs):
 			func_rv = func._prv.rv
 			func_rv.specs.append(spec)
 
-			spec_rv.monitors.add_monitor(Monitor(name, func))
+			spec_rv.spec_info.add_monitor(Monitor(name, func))
 
 		spec._prv = spec_rv
 		return spec
@@ -146,19 +146,18 @@ def pre_func_call(state):
 @use_state(rv=True, inargs=True)
 def post_func_call(state):
 	for spec in state.rv.specs:
-		monitors = spec._prv.monitors
-		event = Event(state, monitors)
-		call_oneshots(event, spec)
+		spec_info = spec._prv.spec_info
+		event = Event(state, spec_info)
+		call_oneshots(event)
 
 		spec(event)
-	pass
 
-def call_oneshots(event, spec):
-	monitors = event._monitors
-	if monitors.oneshots:
-		for oneshot in monitors.oneshots:
+def call_oneshots(event):
+	spec_info = event._spec_info
+	if spec_info.oneshots:
+		for oneshot in spec_info.oneshots:
 			oneshot(event)
-		monitors.oneshots = []
+		spec_info.oneshots = []
 
 	monitor = event.active_function.monitor
 	if monitor.oneshots:
