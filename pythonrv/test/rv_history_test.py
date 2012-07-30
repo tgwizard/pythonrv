@@ -137,7 +137,12 @@ class TestHistory(unittest.TestCase):
 				self.assertTrue(event.prev.fn.n.called)
 
 		a = M()
-		for i in range(3):
+		old_default_size = rv.DEFAULT_MAX_HISTORY_SIZE
+		rv.DEFAULT_MAX_HISTORY_SIZE = 100
+
+		for i in range(10):
 			a.m(i)
 			a.n(i)
 			a.o(i)
+
+		rv.DEFAULT_MAX_HISTORY_SIZE = old_default_size

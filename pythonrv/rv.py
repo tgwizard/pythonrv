@@ -2,6 +2,7 @@
 from instrumentation import instrument, use_state
 from dotdict import dotdict
 
+DEFAULT_MAX_HISTORY_SIZE = 10
 
 class Monitor(object):
 	def __init__(self, name, function):
@@ -39,11 +40,9 @@ class EventMonitor(object):
 			self.called = self.state.wrapper == self.monitor.function
 
 		# history
-		if self.called:
-			self.monitor.history.append(self)
 		self.history = self.monitor.history
-		if len(self.history) > 1:
-			self.prev = self.history[-2]
+		if len(self.history) > 0:
+			self.prev = self.history[-1]
 		else:
 			self.prev = None
 
@@ -95,10 +94,9 @@ class Event(object):
 		self.active_function = fn._active_monitor
 
 		# history
-		spec_info.history.append(self)
 		self.history = spec_info.history
-		if len(self.history) > 1:
-			self.prev = self.history[-2]
+		if len(self.history) > 0:
+			self.prev = self.history[-1]
 		else:
 			self.prev = None
 
@@ -152,6 +150,10 @@ def is_rv_instrumented(func):
 def add_oneshot(target, func):
 	pass
 
+
+
+# the functions that get called before and after a monitored function
+
 @use_state(rv=True)
 def pre_func_call(state):
 	pass
@@ -161,12 +163,29 @@ def post_func_call(state):
 	for spec in state.rv.specs:
 		spec_info = spec._prv.spec_info
 		event = Event(state, spec_info)
+		_make_history(event)
 
-		call_oneshots(event)
+		_call_oneshots(event)
 
 		spec(event)
 
-def call_oneshots(event):
+
+def _make_history(event):
+	event._spec_info.history.append(event)
+	event.active_function.history.append(event.active_function)
+
+	# check sizes
+	event.history = _get_truncated_history(event.history)
+	event.active_function.history = _get_truncated_history(event.active_function.history)
+
+def _get_truncated_history(history, max_len=None):
+	if max_len is None:
+		max_len = DEFAULT_MAX_HISTORY_SIZE
+	if len(history) > max_len:
+		return history[-max_len:]
+	return history
+
+def _call_oneshots(event):
 	spec_info = event._spec_info
 	if spec_info.oneshots:
 		for oneshot in spec_info.oneshots:
