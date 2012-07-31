@@ -87,13 +87,15 @@ def post_func_call(state):
 		_make_history(spec_info, event_data)
 
 		# 3. Create a "monitored event" to pass to the spec
-		event = Event(spec_info, event_data)
+		event = Event(spec, state.rv.specs, spec_info, event_data)
 
-		# 5. Call any oneshots for this spec
+		# 4. Call any oneshots for this spec
 		_call_oneshots(spec_info, event)
+		print "woasdfasdf"
 
-		# 6. Call spec
-		spec(event)
+		# 5. Call spec
+		if _should_call_spec(spec, event):
+			spec(event)
 
 def _call_oneshots(spec_info, event):
 	if spec_info.oneshots:
@@ -106,6 +108,11 @@ def _call_oneshots(spec_info, event):
 		for oneshot in monitor.oneshots:
 			oneshot(event)
 		monitor.oneshots = []
+
+def _should_call_spec(spec, event):
+	if event._should_call_spec:
+		return True
+	return False
 
 ##################################################################
 ### history functions
@@ -192,8 +199,11 @@ class FunctionCallData(object):
 ##################################################################
 
 class Event(object):
-	def __init__(self, spec_info, event_data):
+	def __init__(self, spec_function, all_specs_for_target, spec_info, event_data):
+		self._spec_function = spec_function
+		self._all_specs_for_target = all_specs_for_target
 		self._spec_info = spec_info
+		self._should_call_spec = True
 
 		self.history = spec_info.history
 		self.prev = event_data.prev
@@ -209,19 +219,25 @@ class Event(object):
 		self._spec_info.oneshots.append(next_should_be_monitor)
 
 	def success(self, msg=None):
-		pass
+		self._all_specs_for_target.remove(self._spec_function)
+		self._should_call_spec = False
+		# TODO: what about msg?
 
 	def failure(self, msg=None):
-		pass
+		self._all_specs_for_target.remove(self._spec_function)
+		self._should_call_spec = False
+		raise AssertionError(msg)
 
 	def __repr__(self):
 		return "Event(%s)" % (self.fn)
 
 class EventFunctions(object):
 	def __init__(self, spec_info, event_data_functions):
+		self._functions = []
 		for name, monitor in spec_info.monitors.items():
 			function_call_data = event_data_functions[name]
 			fe = FunctionCallEvent(monitor, function_call_data)
+			self._functions.append(fe)
 			self.__dict__[name] = fe
 			if fe.called:
 				self._active = fe
