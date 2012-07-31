@@ -91,7 +91,6 @@ def post_func_call(state):
 
 		# 4. Call any oneshots for this spec
 		_call_oneshots(spec_info, event)
-		print "woasdfasdf"
 
 		# 5. Call spec
 		if _should_call_spec(spec, event):
