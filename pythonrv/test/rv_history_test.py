@@ -12,29 +12,31 @@ class TestHistory(unittest.TestCase):
 
 		@rv.monitor(m=M.m)
 		def spec(event):
-			assert event.history[-1] == event
+			self.assertEquals(event.history[0].prev, None)
 			raise ValueError("call %d" % len(event.history))
 
 		a = M()
-		for i in range(1,10):
+		for i in range(1,20):
 			with self.assertRaises(ValueError) as e:
 				a.m()
-			self.assertEquals(e.exception.message, "call %d" % i)
+			if i < rv.DEFAULT_MAX_HISTORY_SIZE:
+				self.assertEquals(e.exception.message, "call %d" % i)
+			else:
+				self.assertEquals(e.exception.message, "call %d" % rv.DEFAULT_MAX_HISTORY_SIZE)
 
 	def test_event_prev(self):
 		class M(object):
-			def m(self):
+			def m(self, i):
 				pass
 
 		@rv.monitor(m=M.m)
 		def spec(event):
 			if len(event.history) > 1:
-				assert event.history[-1] == event
-				assert event.history[-2] == event.prev
+				assert event.history[-2].fn.m.inputs[1] == event.prev.fn.m.inputs[1]
 
 		a = M()
-		for i in range(1,10):
-			a.m()
+		for i in range(10):
+			a.m(i)
 
 	def test_event_inputs_and_outputs(self):
 		class M(object):
@@ -65,7 +67,6 @@ class TestHistory(unittest.TestCase):
 
 		@rv.monitor(m=M.m)
 		def spec(event):
-			assert event.fn.m.history[-1] == event.fn.m
 			raise ValueError("call %d" % len(event.history))
 
 		a = M()
@@ -76,20 +77,17 @@ class TestHistory(unittest.TestCase):
 
 	def test_monitor_prev(self):
 		class M(object):
-			def m(self):
+			def m(self, i):
 				pass
 
 		@rv.monitor(m=M.m)
 		def spec(event):
 			if len(event.history) > 1:
-				assert event.fn.m.history[-1] == event.fn.m
-				assert event.fn.m.history[-2] == event.fn.m.prev
-				assert event.history[-1].fn.m == event.fn.m
-				assert event.history[-2].fn.m == event.fn.m.prev
+				assert event.history[-2].fn.m.inputs[1] == event.fn.m.prev.inputs[1]
 
 		a = M()
-		for i in range(1,10):
-			a.m()
+		for i in range(10):
+			a.m(i)
 
 	def test_monitor_inputs_and_outputs(self):
 		class M(object):
