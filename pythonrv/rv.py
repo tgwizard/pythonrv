@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+import logging
+
 from instrumentation import instrument, use_state
 from dotdict import dotdict
 
@@ -8,6 +11,14 @@ from dotdict import dotdict
 
 DEFAULT_MAX_HISTORY_SIZE = 10
 INFINITE_HISTORY_SIZE = -1
+
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARNING = logging.WARNING
+ERROR = logging.ERROR
+CRITICAL = logging.CRITICAL
+
+DEFAULT_ERROR_LEVEL = ERROR
 
 ##################################################################
 ### decorators
@@ -38,12 +49,11 @@ def monitor(**kwargs):
 		return spec
 	return decorator
 
-def spec(history_size=None):
-	if history_size is None:
-		history_size = DEFAULT_MAX_HISTORY_SIZE
+def spec(**kwargs):
 	def decorator(spec_func):
 		spec_info = _spec_info_for_spec(spec_func)
-		spec_info.max_history_size = history_size
+		spec_info.error_level = kwargs.get('level', DEFAULT_ERROR_LEVEL)
+		spec_info.max_history_size = kwargs.get('history_size', DEFAULT_MAX_HISTORY_SIZE)
 		return spec_func
 	return decorator
 
@@ -66,6 +76,7 @@ class SpecInfo(object):
 		self.monitors = {}
 		self.oneshots = []
 		self.history = []
+		self.error_level = DEFAULT_ERROR_LEVEL
 		self.max_history_size = DEFAULT_MAX_HISTORY_SIZE
 
 	def add_monitor(self, monitor):
@@ -106,28 +117,52 @@ def post_func_call(state):
 		event = Event(spec, state.rv.specs, spec_info, event_data)
 
 		# 4. Call any oneshots for this spec
-		_call_oneshots(spec_info, event)
+		errors = _call_oneshots(spec_info, event)
+		_handle_errors(spec_info, errors)
 
 		# 5. Call spec
-		if _should_call_spec(spec, event):
-			spec(event)
+		errors = _call_spec(spec, event)
+		_handle_errors(spec_info, errors)
 
 def _call_oneshots(spec_info, event):
-	if spec_info.oneshots:
-		for oneshot in spec_info.oneshots:
-			oneshot(event)
-		spec_info.oneshots = []
-
+	errors = []
 	monitor = event.called_function.monitor
-	if monitor.oneshots:
+
+	def all_oneshots():
+		for oneshot in spec_info.oneshots:
+			yield oneshot
 		for oneshot in monitor.oneshots:
+			yield oneshot
+
+	for oneshot in all_oneshots():
+		try:
 			oneshot(event)
-		monitor.oneshots = []
+		except AssertionError as e:
+			errors.append(e)
+
+	spec_info.oneshots = []
+	monitor.oneshots = []
+
+	return errors
+
+def _call_spec(spec, event):
+	if not _should_call_spec(spec, event):
+		return
+
+	try:
+		spec(event)
+	except AssertionError as e:
+		return [e]
 
 def _should_call_spec(spec, event):
 	if event._should_call_spec:
 		return True
 	return False
+
+def _handle_errors(spec_info, errors):
+	if errors:
+		_error_handler.handle(spec_info.error_level, errors)
+
 
 ##################################################################
 ### history functions
@@ -296,4 +331,45 @@ class FunctionCallEvent(object):
 
 	def __repr__(self):
 		return "FunctionCallEvent(%s, %s)" % (self.name, self.called)
+
+##################################################################
+### configuration
+##################################################################
+
+class RaiseExceptionErrorHandler(object):
+	def __init__(self, level=ERROR):
+		self.level = level
+
+	def handle(self, level, errors):
+		if level >= self.level:
+			# TODO: somehow raise all errors, not just the first one
+			for e in errors:
+				raise e
+
+	def __repr__(self):
+		return "RaiseExceptionErrorHandler(%d)" % self.level
+
+class LoggingErrorHandler(object):
+	def __init__(self):
+		self.logger = logging.getLogger('pythonrv')
+
+	def handle(self, level, errors):
+		for e in errors:
+			self.logger.log(level, e)
+
+	def __repr__(self):
+		return "LoggingErrorHandler()"
+
+DEFAULT_ERROR_HANDLER = RaiseExceptionErrorHandler()
+_error_handler = DEFAULT_ERROR_HANDLER
+
+def configure(**kwargs):
+	global _error_handler
+	_error_handler = kwargs.get('error_handler', DEFAULT_ERROR_HANDLER)
+
+def get_configuration():
+	return {
+			'error_handler': _error_handler,
+		}
+
 
