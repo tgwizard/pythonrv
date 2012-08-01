@@ -63,6 +63,7 @@ class TestHistory(unittest.TestCase):
 				pass
 
 		@rv.monitor(m=M.m)
+		@rv.spec(history_size=10)
 		def spec(event):
 			raise ValueError("call %d" % len(event.history))
 

@@ -9,7 +9,7 @@ from dotdict import dotdict
 ### defaults and constants
 ##################################################################
 
-DEFAULT_MAX_HISTORY_SIZE = 10
+DEFAULT_MAX_HISTORY_SIZE = 2
 INFINITE_HISTORY_SIZE = -1
 
 DEBUG = logging.DEBUG
