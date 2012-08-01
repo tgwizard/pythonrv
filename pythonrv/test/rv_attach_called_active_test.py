@@ -18,7 +18,7 @@ class TestCalledAndActive(unittest.TestCase):
 		@rv.monitor(test=t_one)
 		def spec(event):
 			self.assertTrue(event.fn.test.called)
-			self.assertEquals(event.active_function, event.fn.test)
+			self.assertEquals(event.called_function, event.fn.test)
 			raise ValueError("test called")
 
 		with self.assertRaises(ValueError) as e:
@@ -33,7 +33,7 @@ class TestCalledAndActive(unittest.TestCase):
 		@rv.monitor(test=t_two)
 		def spec(event):
 			self.assertTrue(event.fn.test.called)
-			self.assertEquals(event.active_function, event.fn.test)
+			self.assertEquals(event.called_function, event.fn.test)
 			if enable_first:
 				raise ValueError("test called")
 
@@ -47,7 +47,7 @@ class TestCalledAndActive(unittest.TestCase):
 		@rv.monitor(test=t_two)
 		def spec2(event):
 			self.assertTrue(event.fn.test.called)
-			self.assertEquals(event.active_function, event.fn.test)
+			self.assertEquals(event.called_function, event.fn.test)
 			raise ValueError("test called2")
 
 		with self.assertRaises(ValueError) as e:
@@ -67,7 +67,7 @@ class TestCalledAndActive(unittest.TestCase):
 		@rv.monitor(a=M.a)
 		def spec(event):
 			self.assertTrue(event.fn.a.called)
-			self.assertEquals(event.active_function, event.fn.a)
+			self.assertEquals(event.called_function, event.fn.a)
 			raise ValueError("a called")
 
 		m = M()
@@ -88,10 +88,10 @@ class TestCalledAndActive(unittest.TestCase):
 		def spec(event):
 			self.assertTrue(event.fn.a.called or event.fn.b.called)
 			if event.fn.a.called:
-				self.assertEquals(event.active_function, event.fn.a)
+				self.assertEquals(event.called_function, event.fn.a)
 				raise ValueError("a called")
 			if event.fn.b.called:
-				self.assertEquals(event.active_function, event.fn.b)
+				self.assertEquals(event.called_function, event.fn.b)
 				raise ValueError("b called")
 
 		m = M()
@@ -119,11 +119,11 @@ class TestCalledAndActive(unittest.TestCase):
 		def spec(event):
 			self.assertTrue(event.fn.a.called or event.fn.b.called)
 			if event.fn.a.called:
-				self.assertEquals(event.active_function, event.fn.a)
+				self.assertEquals(event.called_function, event.fn.a)
 				if enable_first:
 					raise ValueError("a called")
 			if event.fn.b.called:
-				self.assertEquals(event.active_function, event.fn.b)
+				self.assertEquals(event.called_function, event.fn.b)
 				if enable_first:
 					raise ValueError("b called")
 
@@ -147,10 +147,10 @@ class TestCalledAndActive(unittest.TestCase):
 		def spec2(event):
 			self.assertTrue(event.fn.a.called or event.fn.b.called)
 			if event.fn.a.called:
-				self.assertEquals(event.active_function, event.fn.a)
+				self.assertEquals(event.called_function, event.fn.a)
 				raise ValueError("a called2")
 			if event.fn.b.called:
-				self.assertEquals(event.active_function, event.fn.b)
+				self.assertEquals(event.called_function, event.fn.b)
 				raise ValueError("b called2")
 
 		with self.assertRaises(ValueError) as e:

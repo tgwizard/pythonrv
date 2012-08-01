@@ -102,7 +102,7 @@ def _call_oneshots(spec_info, event):
 			oneshot(event)
 		spec_info.oneshots = []
 
-	monitor = event.active_function.monitor
+	monitor = event.called_function.monitor
 	if monitor.oneshots:
 		for oneshot in monitor.oneshots:
 			oneshot(event)
@@ -124,7 +124,7 @@ def _make_history(spec_info, event_data):
 		event_data.prev = None
 	spec_info.history.append(event_data)
 
-	func_data = event_data.active_function
+	func_data = event_data.called_function
 	monitor = spec_info.monitors[func_data.name]
 	if len(monitor.history) > 0:
 		func_data.prev = monitor.history[-1]
@@ -152,7 +152,7 @@ def _truncate_history(el, max_len=None):
 class EventData(object):
 	def __init__(self, spec_info, state):
 		self.fn = EventDataFunctions(spec_info, state)
-		self.active_function = self.fn._active
+		self.called_function = self.fn._called
 
 	def __repr__(self):
 		return "EventData(%s)" % (self.fn)
@@ -165,7 +165,7 @@ class EventDataFunctions(object):
 			self._functions.append(em)
 			self.__dict__[name] = em
 			if em.called:
-				self._active = em
+				self._called = em
 
 	def __getitem__(self, name):
 		return self.__dict__[name]
@@ -208,7 +208,7 @@ class Event(object):
 		self.prev = event_data.prev
 
 		self.fn = EventFunctions(spec_info, event_data.fn)
-		self.active_function = self.fn._active
+		self.called_function = self.fn._called
 
 	def next(self, monitor, error_msg=None):
 		name_to_check = monitor.name
@@ -239,7 +239,7 @@ class EventFunctions(object):
 			self._functions.append(fe)
 			self.__dict__[name] = fe
 			if fe.called:
-				self._active = fe
+				self._called = fe
 
 	def __getitem__(self, name):
 		return self.__dict__[name]

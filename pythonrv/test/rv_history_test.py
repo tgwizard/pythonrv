@@ -123,8 +123,8 @@ class TestHistory(unittest.TestCase):
 
 		@rv.monitor(m=M.m, n=M.n, o=M.o)
 		def spec(event):
-			self.assertEquals((len(event.history)-1)/3, event.active_function.inputs[1])
-			self.assertEquals(len(event.active_function.history), event.active_function.inputs[1]+1)
+			self.assertEquals((len(event.history)-1)/3, event.called_function.inputs[1])
+			self.assertEquals(len(event.called_function.history), event.called_function.inputs[1]+1)
 
 			if event.fn.m.called:
 				if len(event.history) > 1:
