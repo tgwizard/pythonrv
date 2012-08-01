@@ -153,10 +153,12 @@ def _make_history(spec_info, event_data):
 	_truncate_history(monitor, spec_info.max_history_size)
 
 def _truncate_history(el, max_len=None):
+	if max_len == INFINITE_HISTORY_SIZE:
+		return
 	if max_len is None:
 		max_len = DEFAULT_MAX_HISTORY_SIZE
 
-	if max_len != INFINITE_HISTORY_SIZE and len(el.history) > max_len:
+	if len(el.history) > max_len:
 		# we always have at least 1 in the history
 		el.history = el.history[-max_len:(max_len+1)]
 		if len(el.history) > 0:
