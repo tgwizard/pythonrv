@@ -53,7 +53,10 @@ def spec(**kwargs):
 	def decorator(spec_func):
 		spec_info = _spec_info_for_spec(spec_func)
 		spec_info.error_level = kwargs.get('level', DEFAULT_ERROR_LEVEL)
-		spec_info.max_history_size = kwargs.get('history_size', DEFAULT_MAX_HISTORY_SIZE)
+		history_size = kwargs.get('history_size', DEFAULT_MAX_HISTORY_SIZE)
+		if history_size < -1:
+			raise ValueError("Negative max history sizes (%d) are not allowed" % history_size)
+		spec_info.max_history_size = history_size
 		return spec_func
 	return decorator
 

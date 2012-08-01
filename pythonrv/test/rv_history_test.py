@@ -148,6 +148,18 @@ class TestHistory(unittest.TestCase):
 				a.m()
 			self.assertEquals(e.exception.message, i+1)
 
+	def test_negative_history_size(self):
+		class M(object):
+			def m(self):
+				pass
+
+		with self.assertRaises(ValueError) as e:
+			@rv.spec(history_size=-3)
+			@rv.monitor(m=M.m)
+			def spec(event):
+				raise ValueError(len(event.history))
+		self.assertEquals(e.exception.message, "Negative max history sizes (-3) are not allowed")
+
 	# test many
 	def test_many_monitors(self):
 		class M(object):
