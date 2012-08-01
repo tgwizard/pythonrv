@@ -7,6 +7,7 @@ from dotdict import dotdict
 ##################################################################
 
 DEFAULT_MAX_HISTORY_SIZE = 10
+INFINITE_HISTORY_SIZE = -1
 
 ##################################################################
 ### decorators
@@ -14,8 +15,7 @@ DEFAULT_MAX_HISTORY_SIZE = 10
 
 def monitor(**kwargs):
 	def decorator(spec):
-		spec_rv = dotdict()
-		spec_rv.spec_info = SpecInfo()
+		spec_info = _spec_info_for_spec(spec)
 
 		for name, func in kwargs.items():
 			obj = None
@@ -33,14 +33,29 @@ def monitor(**kwargs):
 			func_rv = func._prv.rv
 			func_rv.specs.append(spec)
 
-			spec_rv.spec_info.add_monitor(Monitor(name, func))
+			spec_info.add_monitor(Monitor(name, func))
 
-		spec._prv = spec_rv
 		return spec
+	return decorator
+
+def spec(history_size=None):
+	if history_size is None:
+		history_size = DEFAULT_MAX_HISTORY_SIZE
+	def decorator(spec_func):
+		spec_info = _spec_info_for_spec(spec_func)
+		spec_info.max_history_size = history_size
+		return spec_func
 	return decorator
 
 def _is_rv_instrumented(func):
 	return hasattr(func, '_prv') and not func._prv.rv is None
+
+def _spec_info_for_spec(spec):
+	if '_prv' not in spec.__dict__:
+		spec._prv = dotdict()
+	if 'spec_info' not in spec._prv:
+		spec._prv.spec_info = SpecInfo()
+	return spec._prv.spec_info
 
 ##################################################################
 ### info and data about specifications and monitors
@@ -51,6 +66,7 @@ class SpecInfo(object):
 		self.monitors = {}
 		self.oneshots = []
 		self.history = []
+		self.max_history_size = DEFAULT_MAX_HISTORY_SIZE
 
 	def add_monitor(self, monitor):
 		self.monitors[monitor.name] = monitor
@@ -133,15 +149,16 @@ def _make_history(spec_info, event_data):
 	monitor.history.append(func_data)
 
 	# check sizes
-	_truncate_history(spec_info)
-	_truncate_history(monitor)
+	_truncate_history(spec_info, spec_info.max_history_size)
+	_truncate_history(monitor, spec_info.max_history_size)
 
 def _truncate_history(el, max_len=None):
-	# FIXME: cannot reset the "outer" history, need to get inner reference
 	if max_len is None:
 		max_len = DEFAULT_MAX_HISTORY_SIZE
-	if len(el.history) > max_len:
-		el.history = el.history[-max_len:]
+
+	if max_len != INFINITE_HISTORY_SIZE and len(el.history) > max_len:
+		# we always have at least 1 in the history
+		el.history = el.history[-max_len:(max_len+1)]
 		if len(el.history) > 0:
 			el.history[0].prev = None
 

@@ -16,13 +16,10 @@ class TestHistory(unittest.TestCase):
 			raise ValueError("call %d" % len(event.history))
 
 		a = M()
-		for i in range(1,20):
+		for i in range(rv.DEFAULT_MAX_HISTORY_SIZE):
 			with self.assertRaises(ValueError) as e:
 				a.m()
-			if i < rv.DEFAULT_MAX_HISTORY_SIZE:
-				self.assertEquals(e.exception.message, "call %d" % i)
-			else:
-				self.assertEquals(e.exception.message, "call %d" % rv.DEFAULT_MAX_HISTORY_SIZE)
+			self.assertEquals(e.exception.message, "call %d" % (i+1))
 
 	def test_event_prev(self):
 		class M(object):
@@ -111,6 +108,46 @@ class TestHistory(unittest.TestCase):
 				a.m(dict(x=i))
 			self.assertEquals(e.exception.message, "prev vals %d" % ((i-1)*2 + i))
 
+	# test history size limit
+	def test_history_sizes(self):
+		for i in range(35):
+			# we always have at least 1 in the history
+			history_size = max(i, 1)
+			class M(object):
+				def m(self):
+					pass
+
+			@rv.monitor(m=M.m)
+			@rv.spec(history_size=i)
+			def spec(event):
+				raise ValueError("%d %d" % (len(event.history), len(event.fn.m.history)))
+
+			a = M()
+			for j in range(1, 80):
+				with self.assertRaises(ValueError) as e:
+					a.m()
+				if (j <= history_size):
+					self.assertEquals(e.exception.message, "%d %d" % (j, j))
+				else:
+					self.assertEquals(e.exception.message, "%d %d" % (history_size, history_size))
+
+	def test_infinite_history_size(self):
+		# won't really test infinite size...
+		class M(object):
+			def m(self):
+				pass
+
+		@rv.spec(history_size=rv.INFINITE_HISTORY_SIZE)
+		@rv.monitor(m=M.m)
+		def spec(event):
+			raise ValueError(len(event.history))
+
+		a = M()
+		for i in range(200):
+			with self.assertRaises(ValueError) as e:
+				a.m()
+			self.assertEquals(e.exception.message, i+1)
+
 	# test many
 	def test_many_monitors(self):
 		class M(object):
@@ -122,6 +159,7 @@ class TestHistory(unittest.TestCase):
 				pass
 
 		@rv.monitor(m=M.m, n=M.n, o=M.o)
+		@rv.spec(history_size=100)
 		def spec(event):
 			self.assertEquals((len(event.history)-1)/3, event.called_function.inputs[1])
 			self.assertEquals(len(event.called_function.history), event.called_function.inputs[1]+1)
@@ -135,12 +173,7 @@ class TestHistory(unittest.TestCase):
 				self.assertTrue(event.prev.fn.n.called)
 
 		a = M()
-		old_default_size = rv.DEFAULT_MAX_HISTORY_SIZE
-		rv.DEFAULT_MAX_HISTORY_SIZE = 100
-
 		for i in range(10):
 			a.m(i)
 			a.n(i)
 			a.o(i)
-
-		rv.DEFAULT_MAX_HISTORY_SIZE = old_default_size
