@@ -99,8 +99,8 @@ def more_specifications(event):
 	assert event.fn.fact.called
 
 	# the inputs, outputs and result can be accessed like this
-	event.fn.fact.inputs				# a copy of the input argument tuple
-	event.fn.fact.input_kwargs	# a copy of the input key-word argument dict
+	event.fn.fact.inputs        # a copy of the input argument tuple
+	event.fn.fact.input_kwargs  # a copy of the input key-word argument dict
 	event.fn.fact.outputs
 	event.fn.fact.output_kwargs
 	event.fn.fact.result
@@ -119,4 +119,17 @@ def more_specifications(event):
 	# and
 	for old_fact_call in event.fn.fact.history:
 		pass
+
+	# we can also say that the next time some function, or a specific function,
+	# that this spec montors something special should happen
+	event.next(call_next_time)
+	event.fn.fact.next(lambda e: None)
+
+	# sometimes a specification can "finish" - it need not be verified again
+	event.success("optional message telling that everything was ok")
+	# or
+	event.failure("we've failed, and there's no point continuing this verification")
+
+def call_next_time(event):
+	# here we gain access to all the same data as in the spec
 ~~~
