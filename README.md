@@ -142,6 +142,7 @@ def more_specifications(event):
 
 def call_next_time(event):
 	# here we gain access to all the same data as in the spec
+	pass
 ~~~
 
 ## Dealing with Errors
