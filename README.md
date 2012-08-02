@@ -44,7 +44,14 @@ well.
 
 ## Examples
 
-First, lets say we have a function which correctness we want to verifiy:
+Here are some simple examples showing the pythonrv API. For more realistic
+examples, see the
+[examples](https://github.com/tgwizard/pythonrv/tree/master/examples) folder.
+The [unit
+tests](https://github.com/tgwizard/pythonrv/tree/master/pythonrv/test) might
+also be useful to see what works.
+
+First, lets say we have a function which correctness we want to verify:
 
 ~~~ python
 # factorial.py
@@ -119,6 +126,9 @@ def more_specifications(event):
 	# and
 	for old_fact_call in event.fn.fact.history:
 		pass
+	# this is obviously a big drain on the memory, so by default only two events
+	# are stored in the history (this and the previous). this can be changed,
+	# like we do here with @rv.spec(history_size=20)
 
 	# we can also say that the next time some function, or a specific function,
 	# that this spec montors something special should happen
@@ -133,3 +143,36 @@ def more_specifications(event):
 def call_next_time(event):
 	# here we gain access to all the same data as in the spec
 ~~~
+
+## Dealing with Errors
+
+Specifications signal verifications errors by raising the `AssertionError`
+exception (which the `assert` statement does). When this happens, pythonrv, by
+default, lets this error propagate, and, if uncaught, the program stops.
+
+If this is not the desired behaviour, it can be changed. For a logging error
+handler, do
+
+~~~ python
+rv.configure(error_handler=rv.LoggingErrorHandler())
+~~~
+
+and then configure logging the normal way, through the [python logging
+module](http://docs.python.org/library/logging.html).
+
+Specifications can be marked with an error level:
+
+~~~ python
+@rv.monitor(f=func)
+@rv.spec(level=rv.DEBUG)
+def spec(event):
+	pass
+~~~
+
+The available error levels are DEBUG, INFO, WARNING, ERROR and CRITICAL (just
+as in the logging module).
+
+For more on error handling, see the [source
+code](https://github.com/tgwizard/pythonrv/blob/master/pythonrv/rv.py), and the
+[unit
+tests](https://github.com/tgwizard/pythonrv/blob/master/pythonrv/test/rv_configuration_test.py).
