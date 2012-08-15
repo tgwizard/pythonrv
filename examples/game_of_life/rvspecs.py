@@ -1,4 +1,4 @@
-from pythonrv import rv, dbc
+from pythonrv import rv
 
 from game import Game, CellTypes
 
@@ -59,17 +59,9 @@ def spec_render_before_update_always(event):
 		assert len(event.history) > 1, "Game update called without calling something else first"
 		assert event.prev.fn.render.called, "Render must be called before update"
 
-
-# TODO: the until-specs above "terminate", or are "finished"/"fulfilled". How
-# to determine if other specs can do so as well?
-
-# TODO: The LTL operator F, eventually/finally (sometime in the future)
-
-
 @rv.monitor(update=Game.update, render=Game.render)
 def spec_test(event):
 	assert event.fn.update.called or event.fn.render.called, "None of event were called"
 	#raise ValueError("fdsa")
-
 
 #raise ValueError("asdf")
