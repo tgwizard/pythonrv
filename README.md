@@ -177,3 +177,41 @@ For more on error handling, see the [source
 code](https://github.com/tgwizard/pythonrv/blob/master/pythonrv/rv.py), and the
 [unit
 tests](https://github.com/tgwizard/pythonrv/blob/master/pythonrv/test/rv_configuration_test.py).
+
+## Technical Issues
+
+It is recommended that you import your rv specifications among the first things
+you do in your program. The reasons will be detailed below.
+
+When writing specs, this is the *wrong* way:
+
+~~~ python
+# this doesn't work
+from mymodule import myfunc
+
+@rv.monitor(f=myfunc)
+def spec(event):
+	pass
+~~~
+
+This is the correct way:
+
+~~~ python
+# this works
+import mymodule
+@rv.monitor(f=mymodule.myfunc)
+def spec(event):
+	pass
+~~~
+
+The first example creates a reference to the myfunc and inserts it into the
+current module (the module defining the specifications). Monitoring a function
+means adding a wrapper around it, and in this case we only add a wrapper for
+myfunc in the current module, not in mymodule, which all other code will use.
+The second example fixes this.
+
+The above reason also explains why the specifications should be
+imported/defined at the very beginning of the execution: Other modules might
+use the from x import y style, and if they do so before the rv specifications
+have had a chance to monitor/instrument the function, they will get the
+unmonitored/uninstrumented function.
