@@ -183,7 +183,7 @@ tests](https://github.com/tgwizard/pythonrv/blob/master/pythonrv/test/rv_configu
 It is recommended that you import your rv specifications among the first things
 you do in your program. The reasons will be detailed below.
 
-When writing specs, this is the *wrong* way:
+When writing specs, this is the **wrong** way:
 
 ~~~ python
 # this doesn't work
