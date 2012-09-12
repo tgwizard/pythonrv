@@ -188,7 +188,6 @@ When writing specs, this is the **wrong** way:
 ~~~ python
 # this doesn't work
 from mymodule import myfunc
-
 @rv.monitor(f=myfunc)
 def spec(event):
 	pass
@@ -204,14 +203,14 @@ def spec(event):
 	pass
 ~~~
 
-The first example creates a reference to the myfunc and inserts it into the
-current module (the module defining the specifications). Monitoring a function
+The first example creates a reference to myfunc and inserts it into the
+current module (the module defining the specification). Monitoring a function
 means adding a wrapper around it, and in this case we only add a wrapper for
-myfunc in the current module, not in mymodule, which all other code will use.
-The second example fixes this.
+the myfunc reference in the current module. We do not modify mymodule, which
+all other code will use. The second example fixes this.
 
 The above reason also explains why the specifications should be
 imported/defined at the very beginning of the execution: Other modules might
 use the from x import y style, and if they do so before the rv specifications
-have had a chance to monitor/instrument the function, they will get the
-unmonitored/uninstrumented function.
+have had a chance to monitor/instrument the functions, they will get
+unmonitored/uninstrumented references to them.
