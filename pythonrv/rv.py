@@ -79,6 +79,7 @@ class SpecInfo(object):
 		self.monitors = {}
 		self.oneshots = []
 		self.history = []
+		self.active = True
 		self.error_level = DEFAULT_ERROR_LEVEL
 		self.max_history_size = DEFAULT_MAX_HISTORY_SIZE
 
@@ -94,6 +95,9 @@ class Monitor(object):
 		self.function = function
 		self.oneshots = []
 		self.history = []
+
+	def _remove_spec_from_function(self, spec):
+		self.function._prv.rv.specs.remove(spec)
 
 	def __repr__(self):
 		return "Monitor('%s', %s)" % (self.name, self.function)
@@ -117,13 +121,15 @@ def post_func_call(state):
 		_make_history(spec_info, event_data)
 
 		# 3. Create a "monitored event" to pass to the spec
-		event = Event(spec, state.rv.specs, spec_info, event_data)
+		event = Event(spec, spec_info, event_data)
 
 		# 4. Call any oneshots for this spec
 		one_shot_errors = _call_oneshots(spec_info, event)
 
 		# 5. Call spec
 		spec_errors = _call_spec(spec, event)
+
+		_cleanup_spec(spec, spec_info)
 
 		_handle_errors(spec_info, one_shot_errors + spec_errors)
 
@@ -166,6 +172,19 @@ def _should_call_spec(spec, event):
 def _handle_errors(spec_info, errors):
 	if len(errors) > 0:
 		_error_handler.handle(spec_info.error_level, errors)
+
+def _cleanup_spec(spec, spec_info):
+	if spec_info.active:
+		return
+	if len(spec_info.oneshots) > 0:
+		# the spec itself has remaining oneshots
+		return
+	if len([oneshot for monitor in spec_info.monitors.values() for oneshot in monitor.oneshots]) > 0:
+		# some monitor has remaining oneshots
+		return
+
+	for monitor in spec_info.monitors.values():
+		monitor._remove_spec_from_function(spec)
 
 
 ##################################################################
@@ -256,11 +275,10 @@ class FunctionCallData(object):
 ##################################################################
 
 class Event(object):
-	def __init__(self, spec_function, all_specs_for_target, spec_info, event_data):
+	def __init__(self, spec_function, spec_info, event_data):
 		self._spec_function = spec_function
-		self._all_specs_for_target = all_specs_for_target
 		self._spec_info = spec_info
-		self._should_call_spec = True
+		self._should_call_spec = spec_info.active
 
 		self.history = spec_info.history
 		self.prev = event_data.prev
@@ -279,8 +297,7 @@ class Event(object):
 		self.next(next_should_be_monitor)
 
 	def finish(self, success=True, msg=None):
-		self._all_specs_for_target.remove(self._spec_function)
-		self._should_call_spec = False
+		self._should_call_spec = self._spec_info.active = False
 		if not success:
 			raise AssertionError(msg)
 

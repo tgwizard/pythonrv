@@ -89,3 +89,64 @@ class TestSuccessAndFailure(unittest.TestCase):
 		a.m()
 		a.m()
 		a.m()
+
+	def test_remove_and_next_still_called(self):
+		class M(object):
+			def m(self):
+				pass
+			def n(self):
+				pass
+
+		@rv.monitor(m=M.m, n=M.n)
+		def spec(event):
+			event.next(after)
+			event.finish()
+
+		self.assertEquals(len(M.m._prv.rv.specs), 1)
+		self.assertEquals(len(M.n._prv.rv.specs), 1)
+
+		def after(event):
+			event.fn.n.next(after2)
+			raise AssertionError("spike")
+
+		def after2(event):
+			raise AssertionError("hacket")
+
+		a = M()
+		a.m()
+		with self.assertRaises(AssertionError) as e:
+			a.m()
+		self.assertEquals(e.exception.message, "spike")
+
+		self.assertEquals(len(M.m._prv.rv.specs), 1)
+		self.assertEquals(len(M.n._prv.rv.specs), 1)
+
+		a.m()
+		a.m()
+		a.m()
+
+		with self.assertRaises(AssertionError) as e:
+			a.n()
+		self.assertEquals(e.exception.message, "hacket")
+
+
+		self.assertEquals(len(M.m._prv.rv.specs), 0)
+		self.assertEquals(len(M.n._prv.rv.specs), 0)
+
+		a.n()
+		a.m()
+		a.n()
+
+	def test_complex_remove_next(self):
+		class M(object):
+			def m(self):
+				pass
+			def n(self):
+				pass
+			def o(self):
+				pass
+
+		@rv.monitor(m=M.m,n=M.n,o=M.o)
+		def spec(event):
+			pass
+
