@@ -110,7 +110,7 @@ class Monitor(object):
 def pre_func_call(state):
 	pass
 
-@use_state(rv=True, inargs=True)
+@use_state(rv=True, inargs=True, outargs=True)
 def post_func_call(state):
 	# create a copy of this list so that we can modify it while we iterate...
 	for spec in list(state.rv.specs):
@@ -263,8 +263,8 @@ class FunctionCallData(object):
 		if self.called:
 			self.inputs = state.inargs
 			self.input_kwargs = state.inkwargs
-			self.outputs = state.outargs
-			self.output_kwargs = state.outkwargs
+			self.outputs = state.args
+			self.output_kwargs = state.kwargs
 			self.result = state.result
 
 	def __repr__(self):

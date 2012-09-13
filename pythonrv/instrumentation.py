@@ -146,19 +146,23 @@ def make_wrapper():
 
 		if use_state.use:
 			state.function_name = _prv.target.__name__
-			state.args = state.outargs = args
-			state.kwargs = state.outkwargs = kwargs
+			state.args = args
+			state.kwargs = kwargs
 
 			# setup store in state
 			if use_state.global_store:
 				state.global_store = state.global_store or {}
 
-			# setup input args in state
+			# setup input args in state as copies of args
 			if use_state.inargs:
 				state.inargs = copy.deepcopy(args)
-				kwdefaults = inspect.getargspec(_prv.target)[3]
 				state.inkwargs = {}
 				state.inkwargs.update(copy.deepcopy(kwargs))
+
+			if use_state.outargs:
+				state.outargs = copy.deepcopy(args)
+				state.outkwargs = {}
+				state.outkwargs.update(copy.deepcopy(kwargs))
 
 			if use_state.rv:
 				state.rv = _prv.rv
@@ -214,8 +218,11 @@ def make_wrapper():
 			if 'inargs' in state:
 				del state.inargs
 				del state.inkwargs
-			state.args = state.kwargs = None
-			state.outargs = state.outkwargs = None
+			if 'outargs' in state:
+				del state.outargs
+				del state.outkwargs
+			state.args = None
+			state.kwargs = None
 			del state.result
 
 		return result

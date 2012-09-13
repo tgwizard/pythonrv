@@ -11,8 +11,8 @@ class TestState(unittest.TestCase):
 			assert 'result' not in state
 			assert 'inargs' not in state
 			assert 'inkwargs' not in state
-			assert state.args == state.outargs
-			assert state.kwargs == state.outkwargs
+			assert 'outargs' not in state
+			assert 'outkwargs' not in state
 			assert len(state.args) == 1
 			assert state.args[0] == 2
 			assert len(state.kwargs) == 0
@@ -46,7 +46,7 @@ class TestState(unittest.TestCase):
 		assert m(2, y=12, z=5) == 2+12+5
 		assert m(2, y=12, z=5) == 2+12+5
 
-	def test_output_args(self):
+	def test_output_args_going_through(self):
 		@dbc.use_state()
 		def p(state):
 			assert 'result' not in state
@@ -55,9 +55,6 @@ class TestState(unittest.TestCase):
 			assert state.args[0]['moo'] == 2
 			assert len(state.kwargs) == 1
 			assert len(state.kwargs['y']) == 0
-
-			assert state.args == state.outargs
-			assert state.kwargs == state.outkwargs
 
 		@dbc.use_state()
 		def q(state):
@@ -69,9 +66,6 @@ class TestState(unittest.TestCase):
 			assert len(state.kwargs) == 1
 			assert len(state.kwargs['y']) == 1
 			assert state.kwargs['y']['val'] == 7
-
-			assert state.args == state.outargs
-			assert state.kwargs == state.outkwargs
 
 		@dbc.contract(pre=p,post=q)
 		def m(x, y=None):
@@ -97,14 +91,12 @@ class TestState(unittest.TestCase):
 			assert len(state.kwargs) == 1
 			assert len(state.kwargs['y']) == 0
 
-			assert state.args == state.outargs
-			assert state.kwargs == state.outkwargs
 			assert state.args == state.inargs
 			assert state.kwargs == state.inkwargs
 
 		@dbc.use_state(inargs = False)
 		def p2(state):
-			# these fields are present because p requires them
+			# these fields are not present because p doesn't require them
 			assert 'inargs' in state
 			assert 'inkwargs' in state
 
@@ -120,8 +112,6 @@ class TestState(unittest.TestCase):
 			assert len(state.kwargs['y']) == 1
 			assert state.kwargs['y']['val'] == 7
 
-			assert state.args == state.outargs
-			assert state.kwargs == state.outkwargs
 			assert state.args != state.inargs
 			assert state.kwargs != state.inkwargs
 

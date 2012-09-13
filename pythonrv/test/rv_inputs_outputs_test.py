@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
+from nose.tools import nottest
 
 from pythonrv import rv
 
@@ -38,6 +39,43 @@ class TestInputOutput(unittest.TestCase):
 			a.m({'x': 7}, y='y', z={'z': 8})
 		self.assertEquals(e.exception.message,
 				"in(initial {'x': 7} y {'z': 8}) result(ret) out(m {'x2': 9, 'x': 7} y {'z': 0})")
+
+	@nottest
+	def test_input_output_copied_in_history(self):
+		# TODO:
+		# I don't have the energy to fix this now
+		# the problem is now that the outputs in an event is the args part of
+		# the dbc state, but it should be the outargs. But if we use outargs, then
+		# we cannot modify the output data, so it is more difficult to write
+		# tests...
+		class M(object):
+			def m(self, some_dict):
+				pass
+
+		@rv.monitor(m=M.m)
+		def spec(event):
+			if len(event.history) == 1:
+				self.assertEquals(event.fn.m.inputs[1]['x'], 'a')
+				event.fn.m.inputs[1]['x'] = 'b'
+				self.assertEquals(event.fn.m.inputs[1]['x'], 'b')
+				self.assertEquals(event.fn.m.outputs[1]['x'], 'a')
+				event.fn.m.outputs[1]['x'] = 'b'
+				self.assertEquals(event.fn.m.outputs[1]['x'], 'b')
+			else:
+				self.assertEquals(event.prev.fn.m.inputs[1]['x'], 'b')
+				self.assertEquals(event.prev.fn.m.outputs[1]['x'], 'b')
+
+		a = M()
+		some_dict = dict(x = 'a')
+		a.m(some_dict)
+		self.assertEquals(some_dict['x'], 'b')
+
+		some_dict['x'] = 'c'
+		a.m(some_dict)
+		self.assertEquals(some_dict['x'], 'c')
+
+		assert False
+
 
 	def test_spec_executed_after(self):
 		class M(object):
