@@ -11,7 +11,7 @@ class TestMonitorsNext(unittest.TestCase):
 
 		@rv.monitor(m=M.m)
 		def spec(event):
-			event.next(event.fn.m)
+			event.next_called_should_be(event.fn.m)
 
 		a = M()
 		a.m()
@@ -27,7 +27,7 @@ class TestMonitorsNext(unittest.TestCase):
 
 		@rv.monitor(m=M.m, n=M.n)
 		def spec(event):
-			event.next(event.fn.m)
+			event.next_called_should_be(event.fn.m)
 
 		a = M()
 		a.n()
@@ -36,6 +36,31 @@ class TestMonitorsNext(unittest.TestCase):
 		with self.assertRaises(AssertionError) as e:
 			a.n()
 		self.assertEquals(e.exception.message, "Next function called should have been m")
+
+	def test_event_general_next(self):
+		class M(object):
+			def m(self):
+				pass
+			def n(self):
+				pass
+
+		@rv.monitor(m=M.m, n=M.n)
+		def spec(event):
+			event.next(after)
+
+		def after(event):
+			raise AssertionError("turtle power")
+
+		a = M()
+		a.n()
+		with self.assertRaises(AssertionError) as e:
+			a.m()
+		self.assertEquals(e.exception.message, "turtle power")
+
+		a.m()
+		with self.assertRaises(AssertionError) as e:
+			a.n()
+		self.assertEquals(e.exception.message, "turtle power")
 
 class TestMonitorNext(unittest.TestCase):
 	def test_monitor_next_simple(self):

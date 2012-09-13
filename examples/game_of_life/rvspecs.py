@@ -36,7 +36,8 @@ def ensure_cell_state(event, x, y, t):
 @rv.monitor(update=Game.update, render=Game.render)
 def spec_show_update(event):
 	if event.fn.update.called:
-		event.next(event.fn.render, "Game update called without rendering in between")
+		event.next_called_should_be(event.fn.render,
+				"Game update called without rendering in between")
 
 
 # update may not be called before render has been called once

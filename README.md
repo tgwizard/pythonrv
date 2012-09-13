@@ -66,6 +66,7 @@ We can now write specifications for it, preferably in another file:
 
 ~~~ python
 # rvspecs.py
+from pythonrv import rv
 import factorial
 
 @rv.monitor(fact=factorial.factorial)
@@ -92,48 +93,57 @@ A specification is sent an event with information of the called function, its
 history, and the history of all functions monitored by the specification.
 
 ~~~ python
-@rv.monitor(fact=factorial.factorial)
+from pythonrv import rv
+import mymodule
+
+@rv.monitor(foo=mymodule.foo, bar=mymodule.bar)
 @rv.spec(history_size=20)
 def more_specifications(event):
 	# here are all functions monitored
 	event.fn
 	# the currently called function can be accessed like this
 	event.called_function
-	# which in this case is the same as
-	event.fn.fact
+	# which, if mymodule.foo was called, is the same as
+	event.fn.foo
 
 	# we can also check if a function was called
-	assert event.fn.fact.called
+	assert event.fn.foo.called
 
 	# the inputs, outputs and result can be accessed like this
-	event.fn.fact.inputs        # a copy of the input argument tuple
-	event.fn.fact.input_kwargs  # a copy of the input key-word argument dict
-	event.fn.fact.outputs
-	event.fn.fact.output_kwargs
-	event.fn.fact.result
+	event.fn.foo.inputs        # a copy of the input argument tuple
+	event.fn.foo.input_kwargs  # a copy of the input key-word argument dict
+	event.fn.foo.outputs
+	event.fn.foo.output_kwargs
+	event.fn.foo.result
 
 	# we can gain access to the previous event, and the previous function call
 	event.prev
-	event.fn.fact.prev
+	event.fn.foo.prev
 
-	# in this case, these two are equal
-	assert event.prev.fn.fact == event.fn.fact.prev
-	# but they needn't be if more than one function was monitored by this spec
+	# if two calls to mymodule.foo occurr consecutively
+	assert event.prev.fn.foo == event.fn.foo.prev
+	# but they needn't be if more than one function is monitored by a spec
 
 	# we can gain access to the "entire" history
 	for old_event in event.history:
 		pass
 	# and
-	for old_fact_call in event.fn.fact.history:
+	for old_fact_call in event.fn.foo.history:
 		pass
 	# this is obviously a big drain on the memory, so by default only two events
 	# are stored in the history (this and the previous). this can be changed,
 	# like we do here with @rv.spec(history_size=20)
 
-	# we can also say that the next time some function, or a specific function,
-	# that this spec montors something special should happen
+	# we can also say that the next time some monitored function is called,
+	# something should happen
 	event.next(call_next_time)
-	event.fn.fact.next(lambda e: None)
+
+	# or for just a specific monitored function
+	event.fn.foo.next(call_next_time)
+
+	# we can also specify which monitored function should be the next to be
+	# called:
+	event.next_called_should_be(event.fn.bar)
 
 	# sometimes a specification can "finish" - it need not be verified again
 	event.success("optional message telling that everything was ok")

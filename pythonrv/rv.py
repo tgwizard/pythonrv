@@ -267,22 +267,27 @@ class Event(object):
 		self.fn = EventFunctions(spec_info, event_data.fn)
 		self.called_function = self.fn._called
 
-	def next(self, monitor, error_msg=None):
+	def next(self, next_function):
+		self._spec_info.oneshots.append(next_function)
+
+	def next_called_should_be(self, monitor, error_msg=None):
 		name_to_check = monitor.name
 		error_msg = error_msg or "Next function called should have been %s" % name_to_check
 		def next_should_be_monitor(event):
 			assert event.fn[name_to_check].called, error_msg
-		self._spec_info.oneshots.append(next_should_be_monitor)
+		self.next(next_should_be_monitor)
+
+	def finish(self, success=True, msg=None):
+		self._all_specs_for_target.remove(self._spec_function)
+		self._should_call_spec = False
+		if not success:
+			raise AssertionError(msg)
 
 	def success(self, msg=None):
-		self._all_specs_for_target.remove(self._spec_function)
-		self._should_call_spec = False
-		# TODO: what about msg?
+		self.finish(success=True, msg=msg)
 
 	def failure(self, msg=None):
-		self._all_specs_for_target.remove(self._spec_function)
-		self._should_call_spec = False
-		raise AssertionError(msg)
+		self.finish(success=False, msg=msg)
 
 	def __repr__(self):
 		return "Event(%s)" % (self.fn)
