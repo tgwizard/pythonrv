@@ -137,16 +137,36 @@ class TestSuccessAndFailure(unittest.TestCase):
 		a.m()
 		a.n()
 
-	def test_complex_remove_next(self):
+	def test_complex_remove(self):
 		class M(object):
 			def m(self):
 				pass
 			def n(self):
 				pass
-			def o(self):
-				pass
 
-		@rv.monitor(m=M.m,n=M.n,o=M.o)
-		def spec(event):
+
+		@rv.monitor(m=M.m,n=M.n)
+		def spec1(event):
+			event.called_function.outputs[0].calls += "1"
+			if event.fn.n.called:
+				event.success()
 			pass
 
+		@rv.monitor(m=M.m,n=M.n)
+		def spec2(event):
+			event.called_function.outputs[0].calls += "2"
+			pass
+
+		a = M()
+		a.calls = ">"
+		a.m()
+		self.assertEquals(">12", a.calls)
+		a.m()
+		self.assertEquals(">1212", a.calls)
+		a.n()
+		self.assertEquals(">121212", a.calls)
+
+		a.m()
+		self.assertEquals(">1212122", a.calls)
+		a.n()
+		self.assertEquals(">12121222", a.calls)

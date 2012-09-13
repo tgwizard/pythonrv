@@ -112,7 +112,8 @@ def pre_func_call(state):
 
 @use_state(rv=True, inargs=True)
 def post_func_call(state):
-	for spec in state.rv.specs:
+	# create a copy of this list so that we can modify it while we iterate...
+	for spec in list(state.rv.specs):
 		# 1. Create event data from state
 		spec_info = spec._prv.spec_info
 		event_data = EventData(spec_info, state)
