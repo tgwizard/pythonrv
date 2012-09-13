@@ -3,8 +3,8 @@ import unittest
 
 from pythonrv import rv
 
-class TestMonitorsNext(unittest.TestCase):
-	def test_event_next_simple(self):
+class TestEventNext(unittest.TestCase):
+	def test_event_next_called_should_be(self):
 		class M(object):
 			def m(self):
 				pass
@@ -18,7 +18,7 @@ class TestMonitorsNext(unittest.TestCase):
 		a.m()
 		a.m()
 
-	def test_event_next_more(self):
+	def test_event_next_called_should_be_more(self):
 		class M(object):
 			def m(self):
 				pass
@@ -52,14 +52,17 @@ class TestMonitorsNext(unittest.TestCase):
 			raise AssertionError("turtle power")
 
 		a = M()
-		a.n()
+		a.m()
 		with self.assertRaises(AssertionError) as e:
 			a.m()
 		self.assertEquals(e.exception.message, "turtle power")
 
-		a.m()
 		with self.assertRaises(AssertionError) as e:
-			a.n()
+			a.m()
+		self.assertEquals(e.exception.message, "turtle power")
+
+		with self.assertRaises(AssertionError) as e:
+			a.m()
 		self.assertEquals(e.exception.message, "turtle power")
 
 class TestMonitorNext(unittest.TestCase):

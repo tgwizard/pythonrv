@@ -120,12 +120,12 @@ def post_func_call(state):
 		event = Event(spec, state.rv.specs, spec_info, event_data)
 
 		# 4. Call any oneshots for this spec
-		errors = _call_oneshots(spec_info, event)
-		_handle_errors(spec_info, errors)
+		one_shot_errors = _call_oneshots(spec_info, event)
 
 		# 5. Call spec
-		errors = _call_spec(spec, event)
-		_handle_errors(spec_info, errors)
+		spec_errors = _call_spec(spec, event)
+
+		_handle_errors(spec_info, one_shot_errors + spec_errors)
 
 def _call_oneshots(spec_info, event):
 	errors = []
@@ -150,12 +150,13 @@ def _call_oneshots(spec_info, event):
 
 def _call_spec(spec, event):
 	if not _should_call_spec(spec, event):
-		return
+		return []
 
 	try:
 		spec(event)
 	except AssertionError as e:
 		return [e]
+	return []
 
 def _should_call_spec(spec, event):
 	if event._should_call_spec:
@@ -163,7 +164,7 @@ def _should_call_spec(spec, event):
 	return False
 
 def _handle_errors(spec_info, errors):
-	if errors:
+	if len(errors) > 0:
 		_error_handler.handle(spec_info.error_level, errors)
 
 
