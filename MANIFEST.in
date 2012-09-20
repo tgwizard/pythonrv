@@ -1,0 +1,2 @@
+include README.md requirements.txt runtests.sh
+recursive-include examples *.py *.md *.txt
