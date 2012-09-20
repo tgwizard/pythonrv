@@ -6,12 +6,27 @@ from pythonrv import rv
 # these tests test that (1) @rv.monitor works as expected - that it can attach
 # to the desired functions and (2) that .called and .active_monitor work
 
+def t_attrib():
+	return -1
+
 def t_one():
 	return 1
 def t_two():
 	return 2
 
 class TestCalledAndActive(unittest.TestCase):
+	def test_attributes(self):
+		t_attrib.var = 'x'
+		self.assertEquals(t_attrib.var, 'x')
+
+		@rv.monitor(t=t_attrib)
+		def spec(event):
+			pass
+
+		self.assertEquals(t_attrib.var, 'x')
+		t_attrib.var = 'y'
+		self.assertEquals(t_attrib.var, 'y')
+
 	def test_one_function(self):
 		self.assertEquals(t_one(), 1)
 

@@ -10,8 +10,41 @@ error_levels = [rv.DEBUG, rv.INFO, rv.WARNING, rv.ERROR, rv.CRITICAL]
 class TestConfiguration(unittest.TestCase):
 	def test_configuration(self):
 		config = rv.get_configuration()
-		rv.configure(error_handler=1234)
+		self.assertEquals(rv.get_configuration()['error_handler'], rv.DEFAULT_ERROR_HANDLER)
+		self.assertEquals(rv.get_configuration()['enable_copy_args'], True)
+
+		rv.configure(error_handler=1234, enable_copy_args=False)
 		self.assertEquals(rv.get_configuration()['error_handler'], 1234)
+		self.assertEquals(rv.get_configuration()['enable_copy_args'], False)
+
+		rv.configure(**config)
+		self.assertEquals(rv.get_configuration()['error_handler'], rv.DEFAULT_ERROR_HANDLER)
+		self.assertEquals(rv.get_configuration()['enable_copy_args'], True)
+
+	def test_enable_copy_args(self):
+		config = rv.get_configuration()
+
+		class M(object):
+			def m(self):
+				self.x = 123
+
+		@rv.monitor(m=M.m)
+		def spec(event):
+			if hasattr(event.fn.m.inputs[0], 'x'):
+				raise ValueError("buffy")
+			self.assertEquals(event.fn.m.outputs[0].x, 123)
+
+		a = M()
+		a.m()
+
+		b = M()
+		rv.configure(enable_copy_args=False)
+
+		with self.assertRaises(ValueError) as e:
+			b.m()
+		self.assertEquals(e.exception.message, "buffy")
+
+
 		rv.configure(**config)
 
 class TestRaiseExceptionErrorHandler(unittest.TestCase):

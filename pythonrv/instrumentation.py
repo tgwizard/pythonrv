@@ -5,6 +5,10 @@ import copy
 
 from dotdict import dotdict
 
+DEEP_COPY_FUNC = copy.deepcopy
+NO_COPY_FUNC = lambda x: x
+copy_func = DEEP_COPY_FUNC
+
 def instrument(obj, func, pre=None, post=None, attach=True, extra=None):
 	"""
 	Instruments func with a wrapper function that will call all functions in pre
@@ -155,14 +159,9 @@ def make_wrapper():
 
 			# setup input args in state as copies of args
 			if use_state.inargs:
-				state.inargs = copy.deepcopy(args)
+				state.inargs = copy_func(args)
 				state.inkwargs = {}
-				state.inkwargs.update(copy.deepcopy(kwargs))
-
-			if use_state.outargs:
-				state.outargs = copy.deepcopy(args)
-				state.outkwargs = {}
-				state.outkwargs.update(copy.deepcopy(kwargs))
+				state.inkwargs.update(copy_func(kwargs))
 
 			if use_state.rv:
 				state.rv = _prv.rv
@@ -208,6 +207,12 @@ def make_wrapper():
 		# copy result into state
 		if use_state.use:
 			state.result = result
+
+			if use_state.outargs:
+				state.outargs = copy_func(args)
+				state.outkwargs = {}
+				state.outkwargs.update(copy_func(kwargs))
+
 
 		# post-functions
 		for p in _prv.post:

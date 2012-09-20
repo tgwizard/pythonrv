@@ -2,7 +2,7 @@
 
 import logging
 
-from instrumentation import instrument, use_state
+import instrumentation
 from dotdict import dotdict
 
 ##################################################################
@@ -38,7 +38,7 @@ def monitor(**kwargs):
 					raise ValueError("Function %s to monitor is not callable, or iterable of (obj, func)" % str(func))
 
 			if not _is_rv_instrumented(func):
-				func = instrument(obj, func, pre=pre_func_call, post=post_func_call,
+				func = instrumentation.instrument(obj, func, pre=pre_func_call, post=post_func_call,
 						extra={'use_rv': True, 'rv': dotdict(specs=[])})
 
 			func_rv = func._prv.rv
@@ -106,11 +106,11 @@ class Monitor(object):
 ### pre and post functions
 ##################################################################
 
-@use_state(rv=True)
+@instrumentation.use_state(rv=True)
 def pre_func_call(state):
 	pass
 
-@use_state(rv=True, inargs=True, outargs=True)
+@instrumentation.use_state(rv=True, inargs=True, outargs=True)
 def post_func_call(state):
 	# create a copy of this list so that we can modify it while we iterate...
 	for spec in list(state.rv.specs):
@@ -389,14 +389,17 @@ class LoggingErrorHandler(object):
 
 DEFAULT_ERROR_HANDLER = RaiseExceptionErrorHandler()
 _error_handler = DEFAULT_ERROR_HANDLER
+_enable_copy_args = True
 
 def configure(**kwargs):
-	global _error_handler
+	global _error_handler, _enable_copy_args
 	_error_handler = kwargs.get('error_handler', DEFAULT_ERROR_HANDLER)
+	_enable_copy_args = kwargs.get('enable_copy_args', True)
+	instrumentation.copy_func = instrumentation.DEEP_COPY_FUNC if _enable_copy_args else instrumentation.NO_COPY_FUNC
 
 def get_configuration():
+	global _error_handler, _enable_copy_args
 	return {
 			'error_handler': _error_handler,
+			'enable_copy_args': _enable_copy_args
 		}
-
-
