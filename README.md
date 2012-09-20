@@ -170,6 +170,7 @@ If this is not the desired behaviour, it can be changed. For a logging error
 handler, do
 
 ~~~ python
+from pythonrv import rv
 rv.configure(error_handler=rv.LoggingErrorHandler())
 ~~~
 
@@ -195,6 +196,7 @@ tests](https://github.com/tgwizard/pythonrv/blob/master/pythonrv/test/rv_configu
 
 ## Technical Issues
 
+### Importing
 It is recommended that you import your rv specifications among the first things
 you do in your program. The reasons will be detailed below.
 
@@ -229,6 +231,24 @@ imported/defined at the very beginning of the execution: Other modules might
 use the from x import y style, and if they do so before the rv specifications
 have had a chance to monitor/instrument the functions, they will get
 unmonitored/uninstrumented references to them.
+
+### Copying arguments
+
+When intercepting function calls, pythonrv copies the arguments to make sure
+that the history it stores doesn't get altered afterwards and/or from the
+outside. This also makes it so that the input arguments really are input
+arguments, and not modified by the function itself.
+
+This might sometimes be deemed unnecessary, or needlessly expensive. It might
+sometimes not even work, for instance when `cStringIO` is involved (as it is
+for Django requests).
+
+Copying can be turned off:
+
+~~~ python
+from pythonrv import rv
+rv.configure(enable_copy_args=False)
+~~~
 
 ## License
 
