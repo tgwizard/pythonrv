@@ -30,7 +30,7 @@ Run the tests:
 ## Runtime Verification
 
 Runtime verification is the idea of verifying the correctness of a program
-during its execution. Verification is done by checking of the program conforms
+during its execution. Verification is done by checking if the program conforms
 to its specifications.
 
 There are several approaches to runtime verification, where pythonrv is one. It
