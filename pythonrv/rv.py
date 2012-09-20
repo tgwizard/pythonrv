@@ -24,11 +24,11 @@ DEFAULT_ERROR_LEVEL = ERROR
 ### decorators
 ##################################################################
 
-def monitor(**kwargs):
+def monitor(**monitorees):
 	def decorator(spec):
 		spec_info = _spec_info_for_spec(spec)
 
-		for name, func in kwargs.items():
+		for name, func in monitorees.items():
 			obj = None
 			if not hasattr(func, '__call__'):
 				# try to expand the func into both object and function
@@ -49,11 +49,11 @@ def monitor(**kwargs):
 		return spec
 	return decorator
 
-def spec(**kwargs):
+def spec(**options):
 	def decorator(spec_func):
 		spec_info = _spec_info_for_spec(spec_func)
-		spec_info.error_level = kwargs.get('level', DEFAULT_ERROR_LEVEL)
-		history_size = kwargs.get('history_size', DEFAULT_MAX_HISTORY_SIZE)
+		spec_info.error_level = options.get('level', DEFAULT_ERROR_LEVEL)
+		history_size = options.get('history_size', DEFAULT_MAX_HISTORY_SIZE)
 		if history_size < -1:
 			raise ValueError("Negative max history sizes (%d) are not allowed" % history_size)
 		spec_info.max_history_size = history_size
@@ -391,10 +391,10 @@ DEFAULT_ERROR_HANDLER = RaiseExceptionErrorHandler()
 _error_handler = DEFAULT_ERROR_HANDLER
 _enable_copy_args = True
 
-def configure(**kwargs):
+def configure(**options):
 	global _error_handler, _enable_copy_args
-	_error_handler = kwargs.get('error_handler', DEFAULT_ERROR_HANDLER)
-	_enable_copy_args = kwargs.get('enable_copy_args', True)
+	_error_handler = options.get('error_handler', DEFAULT_ERROR_HANDLER)
+	_enable_copy_args = options.get('enable_copy_args', True)
 	instrumentation.copy_func = instrumentation.DEEP_COPY_FUNC if _enable_copy_args else instrumentation.NO_COPY_FUNC
 
 def get_configuration():
