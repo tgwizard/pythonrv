@@ -7,7 +7,12 @@ information.
 
 ## Installing
 
-pythonrv will be available as a pip package, with setup.py and everything.
+pythonrv is available as a [pip package](http://pypi.python.org/pypi/pythonrv),
+with setup.py and everything. Use
+[pip](http://www.pip-installer.org/en/latest/index.html) to install it like
+this:
+
+	pip install pythonrv
 
 ## Coding
 
