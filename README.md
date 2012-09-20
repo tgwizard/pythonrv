@@ -224,3 +224,8 @@ imported/defined at the very beginning of the execution: Other modules might
 use the from x import y style, and if they do so before the rv specifications
 have had a chance to monitor/instrument the functions, they will get
 unmonitored/uninstrumented references to them.
+
+## License
+
+pythonrv is released under the [MIT
+license](http://opensource.org/licenses/mit-license.php).
