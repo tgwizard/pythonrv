@@ -240,8 +240,9 @@ outside. This also makes it so that the input arguments really are input
 arguments, and not modified by the function itself.
 
 This might sometimes be deemed unnecessary, or needlessly expensive. It might
-sometimes not even work, for instance when `cStringIO` is involved (as it is
-for Django requests).
+sometimes not even work, for instance when
+[`cStringIO`](http://docs.python.org/library/stringio.html) is involved (as
+it is for [Django](https://www.djangoproject.com/) requests).
 
 Copying can be turned off:
 
