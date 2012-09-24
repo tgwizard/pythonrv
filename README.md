@@ -133,7 +133,7 @@ def more_specifications(event):
 	for old_event in event.history:
 		pass
 	# and
-	for old_fact_call in event.fn.foo.history:
+	for old_foo_call in event.fn.foo.history:
 		pass
 	# this is obviously a big drain on the memory, so by default only two events
 	# are stored in the history (this and the previous). this can be changed,
