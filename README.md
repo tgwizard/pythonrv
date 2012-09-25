@@ -263,8 +263,8 @@ def spec(event):
 
 Note: Disabling argument copying for one specification actually disables
 argument copying for all monitored functions for that specification. Other
-specification that monitor the same functions won't get argument copying
-either. This is "a feature" bug.
+specifications that monitor the same functions won't get argument copying
+either. This is "a feature".
 
 ## License
 
