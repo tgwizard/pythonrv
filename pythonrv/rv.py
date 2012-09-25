@@ -57,6 +57,9 @@ def spec(**options):
 		if history_size < -1:
 			raise ValueError("Negative max history sizes (%d) are not allowed" % history_size)
 		spec_info.max_history_size = history_size
+
+		enable_copy_args = options.get('enable_copy_args', True)
+		spec_info.copy_func = None if enable_copy_args else instrumentation.NO_COPY_FUNC
 		return spec_func
 	return decorator
 
@@ -82,12 +85,14 @@ class SpecInfo(object):
 		self.active = True
 		self.error_level = DEFAULT_ERROR_LEVEL
 		self.max_history_size = DEFAULT_MAX_HISTORY_SIZE
+		self.copy_func = None
 
 	def add_monitor(self, monitor):
 		self.monitors[monitor.name] = monitor
 
 	def __repr__(self):
-		return "SpecInfo(%s)" % self.monitors
+		return "SpecInfo(%s, active=%s, error_level=%s, max_history_size=%s, copy_func=%s)" % \
+			(self.monitors, self.active, self.error_level, self.max_history_size, self.copy_func)
 
 class Monitor(object):
 	def __init__(self, name, function):

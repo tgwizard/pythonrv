@@ -44,8 +44,44 @@ class TestConfiguration(unittest.TestCase):
 			b.m()
 		self.assertEquals(e.exception.message, "buffy")
 
-
 		rv.configure(**config)
+
+	def test_enable_copy_args_from_spec(self):
+		class M(object):
+			def m(self):
+				self.x = 123
+
+		@rv.monitor(m=M.m)
+		def spec(event):
+			assert not hasattr(event.fn.m.inputs[0], 'x')
+			self.assertEquals(event.fn.m.outputs[0].x, 123)
+
+		a = M()
+		a.m()
+
+		class Q(object):
+			def m(self):
+				self.x = 123
+		b = Q()
+
+		@rv.monitor(m=Q.m)
+		@rv.spec(enable_copy_args=False)
+		def spec_no_copy(event):
+			self.assertEquals(event.fn.m.outputs[0].x, 123)
+			if event.fn.m.inputs[0].x == 123:
+				raise ValueError("buffy")
+
+		with self.assertRaises(ValueError) as e:
+			b.m()
+		self.assertEquals(e.exception.message, "buffy")
+
+	def test_cannot_copy_cstringio(self):
+		import cStringIO, copy
+		cs = cStringIO.StringIO()
+		with self.assertRaises(TypeError) as e:
+			copy.deepcopy(cs)
+		self.assertEquals('object.__new__(cStringIO.StringO) is not safe, use cStringIO.StringO.__new__()', e.exception.message)
+
 
 class TestRaiseExceptionErrorHandler(unittest.TestCase):
 	def test_defaults(self):

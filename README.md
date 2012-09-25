@@ -244,12 +244,27 @@ sometimes not even work, for instance when
 [`cStringIO`](http://docs.python.org/library/stringio.html) is involved (as
 it is for [Django](https://www.djangoproject.com/) requests).
 
-Copying can be turned off:
+Copying can be turned off for all specifications:
 
 ~~~ python
 from pythonrv import rv
 rv.configure(enable_copy_args=False)
 ~~~
+
+Or for a specific specification:
+
+~~~ python
+from pythonrv import rv
+@rv.monitor(func=somemodule.somefunc)
+@rv.spec(enable_copy_args=False)
+def spec(event):
+	pass
+~~~
+
+Note: Disabling argument copying for one specification actually disables
+argument copying for all monitored functions for that specification. Other
+specification that monitor the same functions won't get argument copying
+either. This is "a feature" bug.
 
 ## License
 

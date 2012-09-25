@@ -148,6 +148,16 @@ def make_wrapper():
 		use_state = _prv.use_state
 		state = _prv.state
 
+		# commence ugly hack:
+		# FIXME: this sets the copy_func for all specs for this wrapper. It should
+		# only be for the one needing a special copy_func.
+		local_copy_func = None
+		if hasattr(_prv, 'rv'):
+			if hasattr(_prv.rv, 'spec'):
+				for spec in _prv.rv.specs:
+					local_copy_func = local_copy_func or spec._prv.spec_info.copy_func
+		local_copy_func = local_copy_func or copy_func
+
 		if use_state.use:
 			state.function_name = _prv.target.__name__
 			state.args = args
@@ -159,9 +169,9 @@ def make_wrapper():
 
 			# setup input args in state as copies of args
 			if use_state.inargs:
-				state.inargs = copy_func(args)
+				state.inargs = local_copy_func(args)
 				state.inkwargs = {}
-				state.inkwargs.update(copy_func(kwargs))
+				state.inkwargs.update(local_copy_func(kwargs))
 
 			if use_state.rv:
 				state.rv = _prv.rv
@@ -209,9 +219,9 @@ def make_wrapper():
 			state.result = result
 
 			if use_state.outargs:
-				state.outargs = copy_func(args)
+				state.outargs = local_copy_func(args)
 				state.outkwargs = {}
-				state.outkwargs.update(copy_func(kwargs))
+				state.outkwargs.update(local_copy_func(kwargs))
 
 
 		# post-functions
