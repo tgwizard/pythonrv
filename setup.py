@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 from distutils.core import setup
+import pythonrv
 
 setup(
 	name = 'pythonrv',
-	version = '0.1',
+	version = pythonrv.__version__,
 	description = 'A runtime verification framework',
 	packages = ['pythonrv', 'pythonrv.test'],
 	author = 'Adam Renberg',
