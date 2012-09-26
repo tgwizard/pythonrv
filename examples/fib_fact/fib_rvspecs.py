@@ -1,4 +1,4 @@
-from pythonrv import rv, dbc
+from pythonrv import rv
 
 import fib
 

@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-import sys
-import os
-
 def fib(n):
     a = 1
     b = 1

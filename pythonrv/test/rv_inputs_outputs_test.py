@@ -10,7 +10,7 @@ class TestInputOutput(unittest.TestCase):
             def m(self, x, y=None, **kwargs):
                 self.foo ='m'
                 x['x2'] = 9
-                y = -1
+                y = y+'a'
                 kwargs['z']['z'] = 0
                 return 'ret'
 

@@ -9,7 +9,10 @@ import fib_rvspecs
 import logging
 from pythonrv import rv
 rv.configure(error_handler=rv.LoggingErrorHandler())
-logging.basicConfig(filename="log", level=logging.WARNING, filemode="w", format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(filename="log",
+        level=logging.WARNING,
+        filemode="w",
+        format="%(asctime)s - %(levelname)s - %(message)s")
 
 from fib import fib
 

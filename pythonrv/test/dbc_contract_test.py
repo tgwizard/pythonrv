@@ -122,24 +122,24 @@ class TestOnFunctions(unittest.TestCase):
         self.assertEquals(e.exception.message, "(2, 3) {}")
 
         @dbc.contract(post=pa)
-        def m(x, *args, **kwargs):
+        def n(x, *args, **kwargs):
             return x + kwargs['y']
         with self.assertRaises(ValueError) as e:
-            m(2, 17, 20, y=4)
+            n(2, 17, 20, y=4)
         self.assertEquals(e.exception.message, "(2, 17, 20) {'y': 4}")
 
         @dbc.contract(pre=pb)
-        def m(z):
+        def o(z):
             return z+1
         with self.assertRaises(ValueError) as e:
-            m(2)
+            o(2)
         self.assertEquals(e.exception.message, 2)
 
         @dbc.contract(post=pb)
-        def m(z):
+        def p(z):
             return z+1
         with self.assertRaises(ValueError) as e:
-            m(2)
+            p(2)
         self.assertEquals(e.exception.message, 2)
 
     def test_argument_mutability(self):
@@ -165,11 +165,11 @@ class TestOnFunctions(unittest.TestCase):
         self.assertEquals(m.val, 7)
 
         @dbc.contract(pre=p, post=p)
-        def m(x):
-            m.val += x
-        m.val = 1
-        m(2); m(3); m(10)
-        self.assertEquals(m.val, 16)
+        def n(x):
+            n.val += x
+        n.val = 1
+        n(2); n(3); n(10)
+        self.assertEquals(n.val, 16)
 
     def test_explicit_call(self):
         def p(x):

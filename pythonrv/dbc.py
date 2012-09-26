@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import inspect
 
-from instrumentation import instrument, use_state
+import instrumentation as instr
+use_state = instr.use_state
 
 def before(obj=None, func=None):
     """
@@ -30,7 +30,7 @@ def before(obj=None, func=None):
     """
     obj, func = _swap_if_not_func(obj, func)
     def decorator(precondition, *other_preconditions):
-        instrument(obj, func, pre=(precondition, other_preconditions))
+        instr.instrument(obj, func, pre=(precondition, other_preconditions))
         return precondition
     return decorator
 
@@ -40,7 +40,7 @@ def after(obj, func=None):
     """
     obj, func = _swap_if_not_func(obj, func)
     def decorator(postcondition, *other_postconditions):
-        instrument(obj, func, post=(postcondition, other_postconditions))
+        instr.instrument(obj, func, post=(postcondition, other_postconditions))
         return postcondition
     return decorator
 
@@ -67,6 +67,6 @@ def contract(pre=None, post=None, requires=None, ensures=None):
     Works on "all" functions.
     """
     def decorator(func):
-        return instrument(None, func, pre=(pre, requires), post=(post, ensures), attach=False)
+        return instr.instrument(None, func, pre=(pre, requires), post=(post, ensures), attach=False)
     return decorator
 

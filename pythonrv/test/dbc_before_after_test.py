@@ -60,13 +60,12 @@ class TestOnFunctions(unittest.TestCase):
                 pass
         with self.assertRaises(ValueError):
             @dbc.before('f')
-            def a():
+            def b():
                 pass
 
     def test_return_value(self):
         @dbc.before(func_adam)
         def pre():
-            x = 17
             return 4
         res = func_adam()
         assert "adam" == res
@@ -329,7 +328,7 @@ class TestOnClassFunctions(unittest.TestCase):
 
         # binding directly through existing object on fresh method
         @dbc.before(a.m)
-        def p(self, x):
+        def q(self, x):
             if x == 'a':
                 raise ValueError("spike %s" % x)
         self.assertEquals(a.m(7), 7)
@@ -340,7 +339,7 @@ class TestOnClassFunctions(unittest.TestCase):
 
         # binding on existing object on already bound method
         @dbc.before(b.m)
-        def p(self, x):
+        def r(self, x):
             raise ValueError("angel %s" % self.v)
         self.assertEquals(a.m(7), 7)
         b.v = 'b2'
