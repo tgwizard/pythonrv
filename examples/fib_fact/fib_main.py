@@ -14,9 +14,9 @@ logging.basicConfig(filename="log", level=logging.WARNING, filemode="w", format=
 from fib import fib
 
 def main():
-  print "Fibonacci numbers:"
-  for i in range(1, 20):
-    print "%d -> %d" %(i, fib(i))
+    print "Fibonacci numbers:"
+    for i in range(1, 20):
+        print "%d -> %d" %(i, fib(i))
 
 if __name__ == '__main__':
-  main()
+    main()
