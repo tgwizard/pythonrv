@@ -241,8 +241,9 @@ arguments, and not modified by the function itself.
 
 This might sometimes be deemed unnecessary, or needlessly expensive. It might
 sometimes not even work, for instance when
-[`cStringIO`](http://docs.python.org/library/stringio.html) is involved (as
-it is for [Django](https://www.djangoproject.com/) requests).
+[`cStringIO`](http://docs.python.org/library/stringio.html) is involved. This
+is the case for [Django](https://www.djangoproject.com/) requests in v 1.4.x
+(but not on master).
 
 Copying can be turned off for all specifications:
 
