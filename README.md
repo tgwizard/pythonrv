@@ -5,6 +5,8 @@ implementation of a master thesis currently being written. Please see
 [tgwizard.github.com/thesis](http://tgwizard.github.com/thesis) for more
 information.
 
+[![Build Status](https://secure.travis-ci.org/tgwizard/pythonrv.png)](http://travis-ci.org/tgwizard/pythonrv)
+
 ## Installing
 
 pythonrv is available as a [pip package](http://pypi.python.org/pypi/pythonrv),
