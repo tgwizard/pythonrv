@@ -16,6 +16,8 @@ this:
 
     pip install pythonrv
 
+pythonrv has been tested with Python 2.7. It does not yet work with Python 3.2.
+
 ## Coding
 
 Clone the repository:
