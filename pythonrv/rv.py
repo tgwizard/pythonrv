@@ -2,8 +2,8 @@
 
 import logging
 
-import instrumentation
-from dotdict import dotdict
+from . import instrumentation
+from .dotdict import dotdict
 
 ##################################################################
 ### defaults and constants

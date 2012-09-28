@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import instrumentation as instr
+from . import instrumentation as instr
 use_state = instr.use_state
 
 def before(obj=None, func=None):

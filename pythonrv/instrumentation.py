@@ -3,7 +3,7 @@ import types
 import inspect
 import copy
 
-from dotdict import dotdict
+from .dotdict import dotdict
 
 DEEP_COPY_FUNC = copy.deepcopy
 NO_COPY_FUNC = lambda x: x
