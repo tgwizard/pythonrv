@@ -4,7 +4,7 @@ import unittest
 from pythonrv import rv
 from pythonrv.formalrv import formal_spec, make_assert, make_next, make_if
 
-class TestFormalRV(unittest.TestCase):
+class TestFormalDetails(unittest.TestCase):
     def test_assert_cases(self):
         self.assertEquals(len(make_assert()), 0)
 
@@ -24,6 +24,38 @@ class TestFormalRV(unittest.TestCase):
         self.assertTrue(a[3](4))
         self.assertFalse(a[3](5))
 
+    def test_if_required_attributes(self):
+        with self.assertRaises(AssertionError):
+            make_if()
+        with self.assertRaises(AssertionError):
+            make_if(True)
+        with self.assertRaises(AssertionError):
+            make_if(exp=False)
+        with self.assertRaises(AssertionError):
+            make_if(then=False)
+        with self.assertRaises(AssertionError):
+            make_if(els=False)
+        with self.assertRaises(AssertionError):
+            make_if(then=False,els=False)
+        with self.assertRaises(AssertionError):
+            make_if(exp=False,els=False)
+
+    def test_if_cases(self):
+        self.assertTrue(make_if(exp=True,then=True)[0](None))
+        self.assertTrue(make_if(True,True)[0](None))
+
+        self.assertTrue(make_if(exp=True,then=True,els=False)[0](None))
+        self.assertTrue(make_if(True,True,False)[0](None))
+
+        self.assertFalse(make_if(exp=True,then=False)[0](None))
+        self.assertFalse(make_if(exp=True,then=False,els=True)[0](None))
+
+        self.assertTrue(make_if(exp=False,then=False)[0](None))
+        self.assertTrue(make_if(exp=False,then=False,els=True)[0](None))
+        self.assertFalse(make_if(exp=False,then=True,els=False)[0](None))
+
+
+class TestFormalRV(unittest.TestCase):
     def test_basic_assert(self):
         class M(object):
             def m(self, x):
@@ -137,36 +169,6 @@ class TestFormalRV(unittest.TestCase):
         a.m(0)
         a.m(0)
         a.m(0)
-
-    def test_if_required_attributes(self):
-        with self.assertRaises(AssertionError):
-            make_if()
-        with self.assertRaises(AssertionError):
-            make_if(True)
-        with self.assertRaises(AssertionError):
-            make_if(exp=False)
-        with self.assertRaises(AssertionError):
-            make_if(then=False)
-        with self.assertRaises(AssertionError):
-            make_if(els=False)
-        with self.assertRaises(AssertionError):
-            make_if(then=False,els=False)
-        with self.assertRaises(AssertionError):
-            make_if(exp=False,els=False)
-
-    def test_if_cases(self):
-        self.assertTrue(make_if(exp=True,then=True)[0](None))
-        self.assertTrue(make_if(True,True)[0](None))
-
-        self.assertTrue(make_if(exp=True,then=True,els=False)[0](None))
-        self.assertTrue(make_if(True,True,False)[0](None))
-
-        self.assertFalse(make_if(exp=True,then=False)[0](None))
-        self.assertFalse(make_if(exp=True,then=False,els=True)[0](None))
-
-        self.assertTrue(make_if(exp=False,then=False)[0](None))
-        self.assertTrue(make_if(exp=False,then=False,els=True)[0](None))
-        self.assertFalse(make_if(exp=False,then=True,els=False)[0](None))
 
     def test_simple_if_else(self):
         for i in range(2):
