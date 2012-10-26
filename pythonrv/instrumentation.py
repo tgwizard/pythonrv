@@ -238,7 +238,7 @@ def make_wrapper():
                 del state.outkwargs
             state.args = None
             state.kwargs = None
-            del state.result
+            state.result = None
 
         return result
     return wrapper
