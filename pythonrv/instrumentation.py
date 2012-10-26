@@ -238,7 +238,8 @@ def make_wrapper():
                 del state.outkwargs
             state.args = None
             state.kwargs = None
-            state.result = None
+            if hasattr(state, 'result'):
+                del state.result
 
         return result
     return wrapper
