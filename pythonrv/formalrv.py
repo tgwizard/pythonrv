@@ -64,18 +64,15 @@ class Machine(object):
     def __call__(self, event):
         new_transitions = []
         errors = []
-        print "checking transitions: ", self.transitions
 
         for t in self.transitions:
             e, msg, new = _extract_transition_results(t, event)
 
-            print "asserting t: (%s, %s, %s)" % (e, msg, new)
             if not e:
                 pass
                 errors.append((e, msg))
             new_transitions += new
 
-        print "new transitions: ", new_transitions
         self.transitions = new_transitions
 
         for e, msg in errors:
@@ -84,7 +81,6 @@ class Machine(object):
 
 def _extract_transition_results(transition, event):
     result = transition(event)
-    print ">> result: ", result
     e = None
     msg = None
     new = []
