@@ -11,6 +11,7 @@ from .dotdict import dotdict
 
 DEFAULT_MAX_HISTORY_SIZE = 2
 INFINITE_HISTORY_SIZE = -1
+NO_HISTORY = 1
 
 DEBUG = logging.DEBUG
 INFO = logging.INFO
@@ -56,6 +57,8 @@ def spec(**options):
         history_size = options.get('history_size', DEFAULT_MAX_HISTORY_SIZE)
         if history_size < -1:
             raise ValueError("Negative max history sizes (%d) are not allowed" % history_size)
+        if history_size == 0:
+            history_size = 1
         spec_info.max_history_size = history_size
 
         enable_copy_args = options.get('enable_copy_args', True)

@@ -54,6 +54,23 @@ class TestFormalDetails(unittest.TestCase):
         self.assertTrue(make_if(exp=False,then=False,els=True)[0](None))
         self.assertFalse(make_if(exp=False,then=True,els=False)[0](None))
 
+    def test_no_history(self):
+        class M(object):
+            def m(self, x):
+                pass
+
+        @rv.monitor(m=M.m)
+        @formal_spec
+        def spec():
+            s = make_assert(lambda e: (len(e.history) == 1,"Too much history"),
+                    make_next(lambda: s))
+            return s
+
+        a = M()
+        for i in range(20):
+            a.m(i)
+
+
 
 class TestFormalRV(unittest.TestCase):
     def test_basic_assert(self):

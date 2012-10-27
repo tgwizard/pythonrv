@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from pythonrv import rv
+from pythonrv.dotdict import dotdict
+
 ##################################################################
 ### decorators
 ##################################################################
@@ -52,6 +55,11 @@ def _make_lambda(assertion):
 class Machine(object):
     def __init__(self, transitions):
         self.transitions = transitions
+        # TODO: do this in a cleaner way, such as a class decorator
+        self._prv = dotdict()
+        self._prv.spec_info = rv.SpecInfo()
+        self._prv.spec_info.max_history_size = rv.NO_HISTORY
+
 
     def __call__(self, event):
         new_transitions = []
