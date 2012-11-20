@@ -98,10 +98,14 @@ def simple_specification(event):
             assert in_out[1] >= old_in_out[1]
 ~~~
 
-The first specification checks that all outputs are at least as big as the
-inputs. The second specification verifies the input/output against the
+The first spcification checks that all inputs are greater-than-or-equal-to
+zero.
+The second specification checks that all outputs are at least as big as the
+inputs. The third specification verifies the input/output against the
 historical data for the function; given a larger input, the output must be
-larger-or-equal than before.
+larger-or-equal than before. Note that the last two specs are executed after
+the factorial has been called. This gives them access to return values and
+output arguments.
 
 A specification is sent an event with information of the called function, its
 history, and the history of all functions monitored by the specification.
