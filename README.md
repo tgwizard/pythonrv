@@ -79,11 +79,16 @@ from pythonrv import rv
 import factorial
 
 @rv.monitor(fact=factorial.factorial)
+def input_only_spec(event):
+    assert event.fn.fact.inputs[0] >= 0
+
+@rv.monitor(fact=factorial.factorial)
+@rv.spec(when=rv.POST)
 def simple_specification(event):
     assert event.fn.fact.result >= event.fn.fact.inputs[0]
 
 @rv.monitor(fact=factorial.factorial)
-@rv.spec(history_size=rv.INFINITE_HISTORY_SIZE)
+@rv.spec(when=rv.POST, history_size=rv.INFINITE_HISTORY_SIZE)
 def simple_specification(event):
     in_out = (event.fn.fact.inputs[0], event.fn.fact.result)
     old_in_out = [(x.inputs[0], x.result) for x in event.fn.fact.history]
