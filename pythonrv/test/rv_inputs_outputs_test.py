@@ -15,6 +15,7 @@ class TestInputOutput(unittest.TestCase):
                 return 'ret'
 
         @rv.monitor(m=M.m)
+        @rv.spec(when=rv.POST)
         def spec(event):
             inputs = event.fn.m.inputs
             input_kwargs = event.fn.m.input_kwargs
@@ -83,6 +84,7 @@ class TestInputOutput(unittest.TestCase):
                 raise ValueError("m")
 
         @rv.monitor(m=M.m)
+        @rv.spec(when=rv.POST)
         def spec(event):
             raise ValueError("spec")
 

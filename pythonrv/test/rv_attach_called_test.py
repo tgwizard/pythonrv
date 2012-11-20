@@ -14,6 +14,56 @@ def t_one():
 def t_two():
     return 2
 
+class TestWhenAttach(unittest.TestCase):
+    def test_attach_before(self):
+        class M(object):
+            def m(self):
+                raise ValueError('buffy')
+
+        @rv.monitor(m=M.m)
+        @rv.spec(when=rv.PRE)
+        def spec(event):
+            raise ValueError('willow')
+
+        a = M()
+        with self.assertRaises(ValueError) as e:
+            a.m()
+        self.assertEquals(e.exception.message, 'willow')
+
+    def test_attach_after(self):
+        class M(object):
+            def m(self, x):
+                if x == 0:
+                    raise ValueError('buffy')
+
+        @rv.monitor(m=M.m)
+        @rv.spec(when=rv.POST)
+        def spec(event):
+            raise ValueError('willow')
+
+        a = M()
+        with self.assertRaises(ValueError) as e:
+            a.m(0)
+        self.assertEquals(e.exception.message, 'buffy')
+        with self.assertRaises(ValueError) as e:
+            a.m(1)
+        self.assertEquals(e.exception.message, 'willow')
+
+    def test_attach_default_should_be_before(self):
+        class M(object):
+            def m(self):
+                raise ValueError('buffy')
+
+        @rv.monitor(m=M.m)
+        def spec(event):
+            raise ValueError('willow')
+
+        a = M()
+        with self.assertRaises(ValueError) as e:
+            a.m()
+        self.assertEquals(e.exception.message, 'willow')
+
+
 class TestCalledAndActive(unittest.TestCase):
     def test_attributes(self):
         t_attrib.var = 'x'

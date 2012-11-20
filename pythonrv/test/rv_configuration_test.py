@@ -29,6 +29,7 @@ class TestConfiguration(unittest.TestCase):
                 self.x = 123
 
         @rv.monitor(m=M.m)
+        @rv.spec(when=rv.POST)
         def spec(event):
             if hasattr(event.fn.m.inputs[0], 'x'):
                 raise ValueError("buffy")
@@ -52,6 +53,7 @@ class TestConfiguration(unittest.TestCase):
                 self.x = 123
 
         @rv.monitor(m=M.m)
+        @rv.spec(when=rv.POST)
         def spec(event):
             assert not hasattr(event.fn.m.inputs[0], 'x')
             self.assertEquals(event.fn.m.outputs[0].x, 123)
@@ -65,7 +67,7 @@ class TestConfiguration(unittest.TestCase):
         b = Q()
 
         @rv.monitor(m=Q.m)
-        @rv.spec(enable_copy_args=False)
+        @rv.spec(when=rv.POST, enable_copy_args=False)
         def spec_no_copy(event):
             self.assertEquals(event.fn.m.outputs[0].x, 123)
             if event.fn.m.inputs[0].x == 123:

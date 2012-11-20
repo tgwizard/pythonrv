@@ -9,6 +9,9 @@ from .dotdict import dotdict
 ### defaults and constants
 ##################################################################
 
+PRE = 'pre'
+POST = 'post'
+
 DEFAULT_MAX_HISTORY_SIZE = 2
 INFINITE_HISTORY_SIZE = -1
 NO_HISTORY = 1
@@ -53,6 +56,7 @@ def monitor(**monitorees):
 def spec(**options):
     def decorator(spec_func):
         spec_info = _spec_info_for_spec(spec_func)
+        spec_info.when = options.get('when', PRE)
         spec_info.error_level = options.get('level', DEFAULT_ERROR_LEVEL)
         history_size = options.get('history_size', DEFAULT_MAX_HISTORY_SIZE)
         if history_size < -1:
@@ -86,6 +90,7 @@ class SpecInfo(object):
         self.oneshots = []
         self.history = []
         self.active = True
+        self.when = PRE
         self.error_level = DEFAULT_ERROR_LEVEL
         self.max_history_size = DEFAULT_MAX_HISTORY_SIZE
         self.copy_func = None
@@ -114,14 +119,19 @@ class Monitor(object):
 ### pre and post functions
 ##################################################################
 
-@instrumentation.use_state(rv=True)
+@instrumentation.use_state(rv=True, inargs=True)
 def pre_func_call(state):
-    pass
+    pre_specs = [spec for spec in state.rv.specs if spec._prv.spec_info.when == PRE]
+    _call_specs(state, pre_specs)
 
 @instrumentation.use_state(rv=True, inargs=True, outargs=True)
 def post_func_call(state):
-    # create a copy of this list so that we can modify it while we iterate...
-    for spec in list(state.rv.specs):
+    post_specs = [spec for spec in state.rv.specs if spec._prv.spec_info.when == POST]
+    _call_specs(state, post_specs)
+
+
+def _call_specs(state, specs):
+    for spec in specs:
         # 1. Create event data from state
         spec_info = spec._prv.spec_info
         event_data = EventData(spec_info, state)
@@ -141,6 +151,8 @@ def post_func_call(state):
         _cleanup_spec(spec, spec_info)
 
         _handle_errors(spec_info, one_shot_errors + spec_errors)
+
+
 
 def _call_oneshots(spec_info, event):
     errors = []

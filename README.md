@@ -164,6 +164,25 @@ def call_next_time(event):
     pass
 ~~~
 
+## When to Execute the Specification
+
+The specification is executed before the call is passed on to the active
+monitoree. This can be customized:
+
+~~~ python
+@rv.monitor(f=func)
+@rv.spec(when=rv.POST)
+def spec_after(event):
+    pass
+
+# this is the default, it is not needed to explicitly
+# specify PRE
+@rv.monitor(f=func)
+@rv.spec(when=rv.PRE)
+def spec_before(event):
+    pass
+~~~
+
 ## Dealing with Errors
 
 Specifications signal verifications errors by raising the `AssertionError`

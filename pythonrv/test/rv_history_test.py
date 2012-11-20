@@ -43,6 +43,7 @@ class TestHistory(unittest.TestCase):
                 return ret
 
         @rv.monitor(m=M.m)
+        @rv.spec(when=rv.POST)
         def spec(event):
             if len(event.history) > 1:
                 assert event.prev != event
@@ -95,6 +96,7 @@ class TestHistory(unittest.TestCase):
                 return ret
 
         @rv.monitor(m=M.m)
+        @rv.spec(when=rv.POST)
         def spec(event):
             if len(event.history) > 1:
                 assert event.fn.m.prev != event.fn.m
