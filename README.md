@@ -98,7 +98,7 @@ def simple_specification(event):
             assert in_out[1] >= old_in_out[1]
 ~~~
 
-The first spcification checks that all inputs are greater-than-or-equal-to
+The first specification checks that all inputs are greater-than-or-equal-to
 zero.
 The second specification checks that all outputs are at least as big as the
 inputs. The third specification verifies the input/output against the
