@@ -106,7 +106,7 @@ from pythonrv import rv
 import mymodule
 
 @rv.monitor(foo=mymodule.foo, bar=mymodule.bar)
-@rv.spec(history_size=20)
+@rv.spec(when=rv.POST, history_size=20)
 def more_specifications(event):
     # here are all functions monitored
     event.fn
@@ -175,8 +175,7 @@ monitoree. This can be customized:
 def spec_after(event):
     pass
 
-# this is the default, it is not needed to explicitly
-# specify PRE
+# this is the default, it is not needed to explicitly specify PRE
 @rv.monitor(f=func)
 @rv.spec(when=rv.PRE)
 def spec_before(event):
