@@ -3,6 +3,7 @@ from pythonrv import rv
 import fib
 
 @rv.monitor(fib=fib.fib)
+@rv.spec(when=rv.POST)
 def unit_test_spec(event):
     x = event.fn.fib.inputs[0]
     y = event.fn.fib.result
@@ -15,6 +16,7 @@ def unit_test_spec(event):
     if x == 6: assert y == 8
 
 @rv.monitor(fib=fib.fib)
+@rv.spec(when=rv.POST)
 def old_data_spec(event):
     x = event.fn.fib.inputs[0]
     y = event.fn.fib.result
